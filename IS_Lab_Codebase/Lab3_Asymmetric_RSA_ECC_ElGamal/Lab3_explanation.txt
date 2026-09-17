@@ -1,0 +1,114 @@
+================================================================================
+LAB 3 - ASYMMETRIC KEY CIPHERS : WHAT IS USED AND WHY
+================================================================================
+
+LIBRARIES USED
+  pycryptodome  - RSA, ECC, AES  (from Crypto.PublicKey import RSA, ECC)
+  plain python  - ElGamal and Diffie-Hellman (pycryptodome has no ElGamal)
+  hashlib       - to turn a shared secret into an AES key
+
+--------------------------------------------------------------------------------
+THE ONE IDEA THAT RUNS THROUGH THE WHOLE LAB : HYBRID ENCRYPTION
+--------------------------------------------------------------------------------
+No asymmetric algorithm can encrypt a large message.
+  RSA-2048 with OAEP : maximum ~214 bytes
+  ECC                : cannot encrypt at all, it only agrees on keys
+  ElGamal mod p      : message must be a number smaller than p
+
+So the standard answer to "encrypt a file/message with RSA/ECC/ElGamal" is:
+  1. generate a RANDOM AES key
+  2. AES-encrypt the data (fast, any size)
+  3. protect the AES key with the asymmetric algorithm
+     RSA     -> encrypt the key
+     ECC     -> derive the key by ECDH with an ephemeral key pair (ECIES)
+     ElGamal -> wrap the key as an ElGamal ciphertext
+Write this in every answer; it is where the marks are.
+
+--------------------------------------------------------------------------------
+ALGORITHM SUMMARY
+--------------------------------------------------------------------------------
+RSA         n = p*q, phi = (p-1)(q-1), d = e^-1 mod phi
+            encrypt c = m^e mod n    decrypt m = c^d mod n
+            security: factoring n is hard
+
+ElGamal     private x, public h = g^x mod p
+            encrypt: random k, c1 = g^k, c2 = m * h^k   (both mod p)
+            decrypt: s = c1^x, m = c2 * s^-1 mod p
+            security: discrete logarithm
+            randomised -> same message encrypts differently each time
+            k MUST be fresh; reusing it leaks the plaintext
+
+ECC         private d, public Q = d*G on the curve
+            ECDH  : shared point = my_d * their_Q  (both sides get the same)
+            ECIES : hash the shared point's x coordinate -> AES key
+            ECDSA : signatures
+            security: elliptic curve discrete logarithm
+            P-256 = secp256r1 = prime256v1 (three names, one curve)
+
+Diffie-Hellman  A = g^a, B = g^b, shared = g^(ab) mod p
+            gives a key, NOT encryption and NOT authentication
+            vulnerable to man-in-the-middle unless the public values are signed
+            use the RFC 3526 group-14 prime instead of generating your own
+
+--------------------------------------------------------------------------------
+EXERCISE QUESTIONS
+--------------------------------------------------------------------------------
+q1.py  RSA two ways: (A) library with 2048-bit keys and OAEP padding,
+       (B) the raw maths with our own primes, printing p, q, n, phi, e, d.
+       Use (B) whenever the question says "show the key generation steps".
+
+q2.py  ECC "encryption" = ECIES. Generates an ephemeral key pair, does ECDH
+       with the recipient's public key, hashes the shared x coordinate into
+       an AES key, and encrypts with AES-EAX (which also authenticates).
+
+q3.py  ElGamal from scratch: safe prime p = 2q+1 so that g = 2 generates a
+       large subgroup, then encrypt/decrypt. Demonstrates that encrypting the
+       same message twice gives different ciphertexts.
+
+q4.py  RSA-2048 vs ECC P-256 for file transfer. Measures key generation,
+       encryption, decryption and per-file overhead, and ends with a written
+       comparison (key size, speed, bandwidth, attack resistance).
+
+q5.py  Diffie-Hellman for peer-to-peer file sharing. Times key generation
+       and key exchange, derives an AES key from the shared secret, transfers
+       an encrypted chunk, and notes that n peers need n(n-1)/2 exchanges.
+
+--------------------------------------------------------------------------------
+ADDITIONAL QUESTIONS
+--------------------------------------------------------------------------------
+q1.py  ElGamal with p = 7919, g = 2, h = 6465, x = 2999.
+       IMPORTANT: the manual's key pair is INCONSISTENT - 2^2999 mod 7919 is
+       3868, not 6465. The script shows the garbage output, then repairs the
+       key (h = g^x), and also brute-forces the discrete log to find the x
+       that actually matches h = 6465 (x = 355). Both give the right answer.
+       p is tiny, so encryption is done one character at a time.
+
+q2.py  ECC encryption again, written as reusable functions and compared
+       across P-256, P-384 and P-521.
+
+q3.py  Textbook RSA with n = 323, e = 5, d = 173. Verifies that
+       n = 17*19, phi = 288 and e*d mod phi = 1, encrypts per character,
+       and explains why such a small modulus is useless in practice.
+
+q4.py  Healthcare: EC-ElGamal on secp256r1 versus classic ElGamal mod p,
+       timed on 100 B / 10 KB / 100 KB records.
+
+q5.py  Government agency: RSA-2048 vs ECC vs EC-ElGamal, key generation,
+       encryption, decryption and overhead, with a written conclusion.
+
+--------------------------------------------------------------------------------
+SAMPLE QUESTION
+--------------------------------------------------------------------------------
+sample_questions/q1.py - "SecureMail"
+  Public key registry + hybrid encryption + RSA signature + Diffie-Hellman
+  channel, all menu driven. Reading another user's mail is refused.
+
+--------------------------------------------------------------------------------
+COMMON MISTAKES
+--------------------------------------------------------------------------------
+  * trying to RSA-encrypt a long message directly -> ValueError
+  * forgetting that ECC needs ECIES/ECDH to "encrypt"
+  * generating a 2048-bit safe prime for ElGamal in an exam (takes minutes) -
+    use 256 bits for the demo and say so, or use a standard group
+  * reusing k in ElGamal
+  * using the raw DH shared number as an AES key - always hash it first

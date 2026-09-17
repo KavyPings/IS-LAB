@@ -1,0 +1,95 @@
+================================================================================
+LAB 2 - ADVANCED SYMMETRIC KEY CIPHERS : WHAT IS USED AND WHY
+================================================================================
+
+LIBRARY USED : pycryptodome     ->  pip install pycryptodome
+  from Crypto.Cipher import DES, DES3, AES
+  from Crypto.Util.Padding import pad, unpad
+  from Crypto.Random import get_random_bytes
+
+WHY pycryptodome: writing DES or AES by hand is hundreds of lines of tables.
+The lab is about USING the algorithms and understanding modes, not about
+re-implementing the S-boxes.
+
+--------------------------------------------------------------------------------
+THE THREE THINGS THAT BREAK MOST ANSWERS
+--------------------------------------------------------------------------------
+
+1. KEY SIZE - must be exact
+     DES     8 bytes        AES-128   16 bytes
+     3DES    16 or 24       AES-192   24 bytes
+                            AES-256   32 bytes
+   If the question gives a HEX string, bytes.fromhex() halves its length:
+     "A1B2C3D4"                         -> 8 ASCII bytes  (use directly)
+     "0123456789ABCDEF0123456789ABCDEF" -> 16 bytes as hex = AES-128
+                                        -> 32 bytes as ASCII = AES-256
+   Read the question: if it says AES-128, interpret as hex.
+
+2. PADDING - only for ECB and CBC
+     pad(data, 8)   for DES/3DES (8-byte block)
+     pad(data, 16)  for AES      (16-byte block)
+   CTR, CFB and OFB are STREAM modes: no padding, and the ciphertext is
+   exactly as long as the plaintext.
+
+3. CIPHER OBJECTS ARE SINGLE USE
+   You cannot encrypt and then decrypt with the same object. Create a new
+   one: AES.new(key, AES.MODE_ECB) each time.
+
+--------------------------------------------------------------------------------
+MODES OF OPERATION - WHEN AND WHY
+--------------------------------------------------------------------------------
+  ECB  each block encrypted alone. Identical plaintext blocks give identical
+       ciphertext blocks -> patterns leak. Simplest, never use for real data.
+  CBC  C_i = E(P_i XOR C_(i-1)), C_0 = IV. Hides patterns. Needs an IV
+       (random, not secret, usually prepended to the ciphertext).
+  CFB  block cipher turned into a self-synchronising stream cipher.
+  OFB  stream cipher whose keystream does not depend on the data.
+  CTR  encrypts a counter to make a keystream. No padding, parallelisable,
+       fastest. The nonce must never be reused with the same key.
+
+--------------------------------------------------------------------------------
+EXERCISE QUESTIONS
+--------------------------------------------------------------------------------
+q1.py  DES-ECB, "Confidential Data", key "A1B2C3D4" (8 ASCII bytes).
+       Shows padding growing 17 bytes -> 24 bytes (3 blocks).
+
+q2.py  AES-128-ECB, key read as HEX (16 bytes). Also shows the ASCII
+       reading (32 bytes = AES-256) so you can see the difference.
+
+q3.py  DES vs AES-256 timing. Uses time.perf_counter() and averages over
+       2000 runs (one run is too short to measure). Prints a text bar chart
+       so no plotting library is needed.
+       Result: AES is faster AND stronger - DES's 56-bit key is brute-forceable.
+
+q4.py  Triple DES. THE TRAP: the manual's key repeats every 8 bytes, so
+       K1 == K2 == K3 and pycryptodome refuses it ("degenerates to single
+       DES"). Fix: flip bit 0x02 of K2 (not 0x01 - that is the parity bit,
+       which adjust_key_parity() would reset).
+
+q5.py  AES-192 with "show all steps". Implements the key expansion by hand
+       (RotWord, SubWord, Rcon) and prints all 13 round keys, then lists the
+       round structure: AddRoundKey, then 11 full rounds, then a final round
+       WITHOUT MixColumns. The given key is 16 bytes so it is zero-padded
+       to the 24 bytes AES-192 requires.
+
+--------------------------------------------------------------------------------
+ADDITIONAL QUESTIONS
+--------------------------------------------------------------------------------
+q1.py  5 messages x DES/AES-128/192/256 x 5 modes, timed, with a text bar
+       chart (and a matplotlib PNG if the library happens to be installed).
+q2.py  DES on HEX data blocks. The data is hex, so bytes.fromhex() first.
+       The key "A1B2C3D4E5F60708" is 16 hex chars = exactly 8 bytes.
+q3.py  AES-256 with a 64-hex-character key (32 bytes).
+q4.py  DES-CBC with key "A1B2C3D4" and IV "12345678". Also shows side by
+       side why CBC beats ECB on repeated plaintext blocks.
+q5.py  AES-CTR. Demonstrates that the ciphertext is the same length as the
+       plaintext, that the same function encrypts and decrypts, and extracts
+       the keystream by XORing ciphertext with plaintext.
+
+--------------------------------------------------------------------------------
+SAMPLE QUESTION
+--------------------------------------------------------------------------------
+sample_questions/q1.py - "MediVault"
+  Doctors upload records encrypted with AES-256-CBC (fresh random IV each
+  time), auditors can list metadata but are blocked from decrypting.
+  Shows the exam pattern: roles + symmetric encryption + stored records.

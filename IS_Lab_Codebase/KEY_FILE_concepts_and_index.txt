@@ -1,0 +1,301 @@
+################################################################################
+#                                                                              #
+#   IS LAB - MASTER KEY FILE                                                   #
+#   Which code to reach for, for which kind of question.                       #
+#   Read this file first in the exam.                                          #
+#                                                                              #
+################################################################################
+
+================================================================================
+PART 0 - FOLDER INDEX
+================================================================================
+
+IS_Lab_Codebase/
+|
+|-- KEY_FILE_concepts_and_index.txt      <- YOU ARE HERE
+|-- PYTHON_BASICS_CHEATSHEET.txt         plain-python one-liners (conversions,
+|                                        string ops, hex/binary, files, menus)
+|
+|-- Concepts/                            ONE FILE PER CONCEPT - copy functions
+|   |                                    straight out of these into an answer
+|   |-- c01_classical_ciphers.py         additive, multiplicative, affine,
+|   |                                    Vigenere, autokey, Playfair, Hill,
+|   |                                    transposition, brute-force attacks
+|   |-- c02_symmetric_des_aes.py         DES, 3DES, AES, all 5 modes, make_key,
+|   |                                    AES key expansion, timing helper
+|   |-- c03_rsa.py                       RSA library + textbook, hybrid
+|   |                                    encryption, Fermat factoring attack,
+|   |                                    prime generation
+|   |-- c04_elgamal.py                   ElGamal encrypt/decrypt/sign/verify,
+|   |                                    Schnorr signatures
+|   |-- c05_ecc.py                       ECDH, ECIES encryption, ECDSA,
+|   |                                    raw elliptic curve point arithmetic
+|   |-- c06_rabin.py                     Rabin encrypt/decrypt (4 roots + marker),
+|   |                                    Rabin signatures
+|   |-- c07_diffie_hellman.py            DH exchange, RFC 3526 group 14 prime,
+|   |                                    session key derivation
+|   |-- c08_hashing.py                   sha256/md5/sha1, custom djb2 hash,
+|   |                                    HMAC, collision + avalanche tests
+|   |-- c09_digital_signature.py         RSA / DSA / ECDSA / textbook signing,
+|   |                                    secure_send + secure_receive (CIA)
+|   |-- c10_key_management.py            full KMS: generate, distribute, revoke,
+|   |                                    renew, sealed storage, audit log
+|   |-- c11_access_control.py            RBAC, DAC matrix, Bell-LaPadula,
+|   |                                    time-limited grants, user accounts
+|   |-- c12_conversions_and_storage.py   every str/bytes/hex/int conversion,
+|   |                                    padding, JsonStore, timestamps
+|   |-- c13_socket_client_server.py      length-framed TCP client/server
+|   `-- ALL_CONCEPTS_TOOLKIT.py          ALL OF THE ABOVE IN ONE FILE
+|                                        -> from ALL_CONCEPTS_TOOLKIT import *
+|
+|-- Sample_Question_Answer/
+|   |-- edusecure.py                     THE ANSWER to the sample paper, and
+|   |                                    the BOILERPLATE for any scenario
+|   |                                    question. `python edusecure.py demo`
+|   `-- Sample_Question_explanation.txt  how it works + how to adapt it
+|
+|-- Lab1_Classical_Ciphers/
+|-- Lab2_Symmetric_DES_AES/
+|-- Lab3_Asymmetric_RSA_ECC_ElGamal/
+|-- Lab4_Advanced_Asymmetric_KeyMgmt/
+|-- Lab5_Hashing/
+`-- Lab6_Digital_Signature/
+        each contains:
+          sample_questions/      an exam-style scenario for that lab
+          exercise_questions/    q1.py, q2.py ... the manual's Lab Exercises
+          additional_questions/  q1.py, q2.py ... the manual's Additional Exercises
+          LabN_explanation.txt   what is used in each question and why
+
+================================================================================
+PART 1 - THE 60-SECOND DECISION TABLE
+================================================================================
+
+The question says ...                       -> go to
+--------------------------------------------------------------------------------
+"shift / Caesar / additive cipher"           Concepts/c01     Lab1/exercise/q1
+"multiplicative / affine cipher"             Concepts/c01     Lab1/exercise/q1
+"Vigenere / autokey"                         Concepts/c01     Lab1/exercise/q2
+"Playfair"                                   Concepts/c01     Lab1/exercise/q3
+"Hill cipher"                                Concepts/c01     Lab1/exercise/q4
+"transposition / permutation key"            Concepts/c01     Lab1/additional/q2
+"brute force / break this cipher"            Concepts/c01     Lab1/exercise/q6
+
+"DES"                                        Concepts/c02     Lab2/exercise/q1
+"AES-128 / 192 / 256"                        Concepts/c02     Lab2/exercise/q2,q5
+"Triple DES / 3DES"                          Concepts/c02     Lab2/exercise/q4
+"CBC / CTR / CFB / OFB / ECB mode"           Concepts/c02     Lab2/additional/q4,q5
+"compare encryption times"                   Concepts/c02     Lab2/exercise/q3
+"show the key expansion / all steps"         Concepts/c02     Lab2/exercise/q5
+
+"RSA"                                        Concepts/c03     Lab3/exercise/q1
+"RSA with given n, e, d (small numbers)"     Concepts/c03     Lab3/additional/q3
+"encrypt a FILE with RSA/ECC"                Concepts/c03/c05 Lab3/exercise/q4
+"ElGamal"                                    Concepts/c04     Lab3/exercise/q3
+"ECC / secp256r1 / elliptic curve"           Concepts/c05     Lab3/exercise/q2
+"Diffie-Hellman / key exchange"              Concepts/c07     Lab3/exercise/q5
+"Rabin"                                      Concepts/c06     Lab4/exercise/q2
+
+"key management / generate, revoke, renew"   Concepts/c10     Lab4/exercise/q1,q2
+"secure storage of private keys"             Concepts/c10     Lab4/exercise/q2
+"audit / logging"                            Concepts/c10     Lab4/exercise/q2
+"roles and permissions / access control"     Concepts/c11     Lab4/sample/q1
+"limited-time access / DRM"                  Concepts/c11     Lab4/additional/q1
+"attack on weak RSA keys"                    Concepts/c03     Lab4/additional/q2
+
+"hash / SHA-256 / integrity"                 Concepts/c08     Lab5/exercise/q1
+"write your own hash function"               Concepts/c08     Lab5/exercise/q1
+"MD5 vs SHA-1 vs SHA-256 / collisions"       Concepts/c08     Lab5/exercise/q3
+"HMAC"                                       Concepts/c08     Lab5/sample/q1
+"socket / client-server"                     Concepts/c13     Lab5/exercise/q2
+
+"digital signature"                          Concepts/c09     Lab6/exercise/q1
+"ElGamal / Schnorr signature"                Concepts/c04     Lab6/exercise/q1
+"ECDSA / DSA"                                Concepts/c09     Lab6/exercise/q1
+"CIA triad"                                  Concepts/c09     Lab6/additional/q1
+"verify a signature over a network"          Concepts/c13     Lab6/exercise/q3
+
+"menu driven system with roles"              Sample_Question_Answer/edusecure.py
+
+================================================================================
+PART 2 - HOW TO ANSWER A SCENARIO QUESTION IN 6 STEPS
+================================================================================
+
+Almost every exam question is the same shape as the EduSecure sample:
+a story, a list of roles, and three or four cryptographic primitives.
+
+STEP 1 - UNDERLINE THE PRIMITIVES IN THE QUESTION
+    "uses DES ... RSA digital signatures ... SHA-256 hashing"
+    -> you now know which three functions you need.
+
+STEP 2 - WRITE THE ROLES DICT FIRST
+    ROLES = {"student": {"upload", "view_own"},
+             "faculty": {"decrypt", "verify", "view_all"},
+             "hod":     {"view_hashes", "verify"}}
+    Copy the allowed actions straight from the question's bullet points.
+    This single dict is worth the whole "access control" mark.
+
+STEP 3 - COPY edusecure.py AND SWAP THE PRIMITIVES
+    Section 2 -> the encryption algorithm
+    Section 3 -> the hash
+    Section 4 -> the signature scheme
+    Everything else (storage, login, menus, timestamps) already works.
+
+STEP 4 - GET THE ORDER RIGHT
+    upload : encrypt -> hash the CIPHERTEXT -> sign the hash
+    review : recompute the hash -> verify the signature -> then decrypt
+    If the question words it differently, follow the question.
+
+STEP 5 - STORE WITH TIMESTAMPS
+    Every question says "with timestamps". Use
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    and put it in every stored record. Bytes go into JSON as base64.
+
+STEP 6 - ADD A demo() FUNCTION
+    A non-interactive run that shows: a successful flow, a blocked role, and
+    a tamper test. It takes two minutes to write and it demonstrates every
+    mark on the rubric without you typing menu choices during the viva.
+
+================================================================================
+PART 3 - THE MARK-SCHEME MAP (from the sample paper)
+================================================================================
+  Encryption / Decryption  6 marks   -> Sections 2 of edusecure.py (c02 / c03)
+  Digital Signatures       3 marks   -> Section 4                  (c09)
+  Access Control           3 marks   -> Sections 6                 (c11)
+  Hashing                  3 marks   -> Section 3                  (c08)
+  Write-up                 5 marks   -> the LabN_explanation.txt files
+Build the encryption first - it carries the most marks and everything else
+depends on it. Then access control, then signatures, then hashing.
+
+================================================================================
+PART 4 - CONCEPT -> FUNCTION QUICK REFERENCE
+================================================================================
+(all of these exist in Concepts/ALL_CONCEPTS_TOOLKIT.py, so
+     from ALL_CONCEPTS_TOOLKIT import *
+ gives you every one of them at once)
+
+CLASSICAL
+  clean(text)                            strip spaces, uppercase
+  additive_encrypt/decrypt(text, k)
+  multiplicative_encrypt/decrypt(text, k)
+  affine_encrypt/decrypt(text, a, b)
+  vigenere_encrypt/decrypt(text, keyword)
+  autokey_encrypt/decrypt(text, key)
+  playfair_encrypt/decrypt(text, key)
+  hill_encrypt/decrypt(text, key_matrix)
+  keyed_transposition_encrypt/decrypt(text, perm)
+  rail_fence_encrypt/decrypt(text, rails)
+  brute_force_additive(ct) / brute_force_affine(ct, contains="THE")
+  affine_key_from_known_pair / shift_key_from_known_pair
+  find_transposition_key(plain, cipher, block_size)
+  mod_inverse(a, m) / egcd(a, b)
+
+SYMMETRIC
+  make_key(key, size)                    fix any key string to the right length
+  des_encrypt/des_decrypt(data, key, mode="ECB"|"CBC"|"CFB")
+  des3_encrypt/des3_decrypt(data, key)   (handles the degenerate-key trap)
+  aes_encrypt/aes_decrypt(data, key, bits=128|192|256,
+                          mode="ECB"|"CBC"|"CTR"|"CFB"|"OFB")
+  aes_key_expansion(key) / print_round_keys(key)
+  time_it(func, *args, repeat=100)  /  bar(value, biggest)
+
+RSA
+  rsa_generate(bits) / rsa_encrypt / rsa_decrypt
+  rsa_sign / rsa_verify  (and rsa_sign_pss / rsa_verify_pss)
+  rsa_encrypt_large / rsa_decrypt_large  hybrid, for files
+  save_keys(key) / load_key(path)
+  rsa_keygen_manual(p, q, e) / rsa_encrypt_manual / rsa_decrypt_manual
+  modinv(a, m) / fermat_factor(n) / recover_private_key(n, e, p, q)
+  is_prime(n) / gen_prime(bits)
+
+ELGAMAL AND SCHNORR
+  elgamal_keygen(bits) -> (p, g, y), x
+  elgamal_encrypt / elgamal_decrypt          whole message
+  elgamal_encrypt_chars / elgamal_decrypt_chars   per character, for tiny p
+  elgamal_sign / elgamal_verify
+  schnorr_keygen / schnorr_sign / schnorr_verify
+
+ECC
+  ecc_generate(curve="P-256")
+  ecdh_shared_secret(my_private, their_public)
+  ecc_encrypt / ecc_decrypt                  ECIES
+  ecc_sign / ecc_verify                      ECDSA
+  point_add(P, Q, a, p) / point_multiply(k, P, a, p)   raw curve maths
+
+RABIN
+  rabin_keygen(bits) -> n, (p, q)
+  rabin_encrypt(msg, n) / rabin_decrypt(c, p, q)
+  rabin_roots(c, p, q)                       all four square roots
+  rabin_sign / rabin_verify
+
+DIFFIE-HELLMAN
+  DHParty(name)  .public  .compute_shared(other_public)  .session_key()
+  dh_exchange()                              full timed exchange
+  dh_small_demo(p=23, g=5, a=6, b=15)        textbook numbers
+  P_2048, G_2048                             standard RFC 3526 group
+
+HASHING
+  sha256_hex(data) / hash_with(data, "md5"|"sha1"|"sha256"|"sha512")
+  hash_file(path, algo)
+  custom_hash(text) / custom_hash_verbose(text)      the djb2 hash
+  hmac_sha256(key, msg) / hmac_verify(key, msg, tag)
+  random_strings(n) / time_hash(algo, dataset)
+  find_collisions(dataset, algo, truncate_bits=24) / avalanche_demo()
+
+SIGNATURES
+  sign_rsa / verify_rsa      sign_dsa / verify_dsa    sign_ecdsa / verify_ecdsa
+  sign_rsa_manual(msg, n, d) / verify_rsa_manual(msg, sig, n, e)
+  sign_hex_blob / recover_signed_value      the manual's raw-RSA tool
+  secure_send(msg, sender_priv, receiver_pub)      <- CIA triad in one call
+  secure_receive(pkt, receiver_priv, sender_pub)
+
+KEY MANAGEMENT
+  KeyManagementService(master_password, key_bits, lifetime_days)
+     .generate(entity) .get_public_key .get_private_key
+     .revoke .renew .renew_expired .status .log.show()
+  encrypt_blob / decrypt_blob(data, password)    PBKDF2 + AES-GCM at rest
+  AuditLog(path).record(actor, action, detail)
+
+ACCESS CONTROL
+  ROLE_PERMISSIONS dict     <- edit this to match the question
+  AccessControl().add_user / .login / .require(action) / .allowed(action)
+  AccessMatrix().create / .grant / .revoke / .check        DAC
+  can_read(clearance, classification) / can_write(...)     Bell-LaPadula
+  TimedGrant().grant(user, obj, hours) / .check / .revoke   time-limited
+
+CONVERSIONS AND STORAGE
+  s2b b2s  b2hex hex2b  hex_spaced parse_spaced_hex  b2b64 b642b  b2i i2b
+  to_binary from_binary  xor_bytes  hamming_distance  count_set_bits
+  pkcs7_pad / pkcs7_unpad
+  now()  JsonStore(path).add/.all/.find  write_bytes/read_bytes
+  banner(title)  field(label, value)  short(x, n)
+
+SOCKETS
+  send_msg(sock, data) / recv_msg(sock) / recv_exact(sock, n)
+  run_server() / run_client() / run_server_multipart() / run_client_multipart()
+
+================================================================================
+PART 5 - THINGS THAT COST MARKS
+================================================================================
+  * wrong key length for DES/AES        -> use make_key(key, size)
+  * forgetting pad/unpad in ECB and CBC -> ValueError on decrypt
+  * reusing a cipher object             -> create a new one each time
+  * hashing a str instead of bytes      -> .encode() first
+  * comparing digests with ==           -> use hmac.compare_digest
+  * RSA-encrypting a long message       -> use hybrid encryption
+  * "encrypting with ECC" directly      -> ECC needs ECIES/ECDH
+  * reusing k in ElGamal/Schnorr/DSA    -> leaks the private key
+  * using the raw DH number as a key    -> hash it first
+  * no timestamps in stored records     -> the question always asks for them
+  * storing private keys in plain text  -> "secure storage" means encrypted
+  * signing with the public key         -> the PRIVATE key signs
+  * verify() raising instead of returning False -> wrap it in try/except
+  * a bare recv(1024) socket loop       -> use the 4-byte length framing
+
+================================================================================
+PART 6 - EXAM SETUP CHECKLIST
+================================================================================
+  1. pip install pycryptodome        (the only non-standard library needed)
+  2. copy Concepts/ALL_CONCEPTS_TOOLKIT.py next to your answer file
+  3. start from Sample_Question_Answer/edusecure.py
+  4. run `python yourfile.py demo` to check the whole flow before the viva
+  5. keep this KEY file and PYTHON_BASICS_CHEATSHEET.txt open in a tab

@@ -1,0 +1,7 @@
+2026-08-21 16:15:22,165 - INFO - Key generated for Hospital A
+2026-08-21 16:15:22,186 - INFO - Key generated for Hospital B
+2026-08-21 16:15:22,292 - INFO - Key generated for Clinic C
+2026-08-21 16:15:22,292 - INFO - Keys distributed to Hospital A
+2026-08-21 16:15:22,292 - INFO - Key revoked for Hospital B
+2026-08-21 16:15:22,358 - INFO - Key generated for Clinic C
+2026-08-21 16:15:22,358 - INFO - Key renewed for Clinic C

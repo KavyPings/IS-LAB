@@ -1,0 +1,94 @@
+================================================================================
+LAB 1 - BASIC SYMMETRIC KEY CIPHERS : WHAT IS USED AND WHY
+================================================================================
+
+LIBRARIES USED : NONE. Everything is plain Python.
+  Classical ciphers are simple arithmetic mod 26, so no library is needed.
+  This is deliberate - the exam wants to see that you know the maths.
+
+THE FOUR HELPER FUNCTIONS EVERY ANSWER NEEDS
+  clean(text)       strip spaces/punctuation, uppercase   ("ignore the spaces")
+  ord(c) - 65       letter -> number  (A=0 ... Z=25)
+  chr(n % 26 + 65)  number -> letter  (the % 26 wraps Z back to A)
+  mod_inverse(a,26) find x with a*x = 1 mod 26 - needed to DECRYPT anything
+                    that MULTIPLIES (multiplicative, affine, Hill)
+
+--------------------------------------------------------------------------------
+EXERCISE QUESTIONS
+--------------------------------------------------------------------------------
+
+q1.py - additive / multiplicative / affine on "I am learning information security"
+  additive       C = (P + k) mod 26        decrypt: P = (C - k) mod 26
+  multiplicative C = (P * k) mod 26        decrypt: P = C * k^-1 mod 26
+  affine         C = (a*P + b) mod 26      decrypt: P = a^-1 * (C - b) mod 26
+  WHY mod_inverse: you cannot "divide" in modular arithmetic, so you multiply
+  by the inverse instead. It only exists when gcd(key, 26) = 1, which is why
+  the multiplicative key must be odd and not 13.
+
+q2.py - Vigenere and Autokey on "the house is being sold tonight"
+  Vigenere : keystream = keyword repeated  -> k[i % len(k)]
+  Autokey  : keystream = key, then the PLAINTEXT itself
+  WHY autokey is stronger: the key never repeats, so Kasiski/Friedman
+  analysis (which finds the repeating period) does not apply.
+  Decryption must be done one letter at a time, because each recovered
+  letter becomes the next keystream value.
+
+q3.py - Playfair with key "GUIDANCE"
+  5x5 matrix (I and J share a cell), text split into digraphs.
+  same row -> right, same column -> down, otherwise -> swap columns.
+  WHY the X letters: a digraph cannot have two identical letters, and the
+  text must have an even length, so X is inserted as a filler.
+
+q4.py - Hill cipher with K = [[3,3],[2,7]]
+  C = K * P mod 26 on blocks of 2 letters.
+  Decryption needs K^-1 mod 26 = det^-1 * adjugate(K) mod 26.
+  WHY the determinant matters: if gcd(det, 26) != 1 the matrix has no
+  inverse and the key is unusable.
+
+q5.py - known-plaintext attack on a shift cipher
+  Attack type: KNOWN-PLAINTEXT (the attacker is given a plaintext/ciphertext
+  pair, he did not choose it). Key recovery is one subtraction: k = C - P.
+  NOTE: the manual's "XVIEWYWI" has a typo; it should be XVIEWYVI = TREASURE.
+
+q6.py - brute force / known-pair attack on an affine cipher
+  Two known letters give two equations -> solve for a and b directly.
+  Brute force over all 12 valid a values x 26 b values = 312 keys is also
+  instant. The tiny key space IS the weakness of classical ciphers.
+
+--------------------------------------------------------------------------------
+ADDITIONAL QUESTIONS
+--------------------------------------------------------------------------------
+
+q1.py - brute force an additive cipher (Alice's key near 13)
+  All 26 keys are tried; the readable one is k = 11.
+  Non-letter characters ( / and & ) pass through unchanged.
+  Plaintext reads: CRYPTOGRAPHY AND STEGANOGRAPHY ARE TWO SIDES OF A COIN.
+
+q2.py - keyed transposition attack
+  (a) CHOSEN-PLAINTEXT attack - Eve typed the plaintext herself.
+  (b) Block size is found by checking which block length makes every
+      ciphertext block an anagram of the matching plaintext block.
+      The permutation itself is then read off position by position.
+  NOTE: the manual's "CABDEHFGL" contains letters not in "abcdefghi", so the
+  code demonstrates the method on a consistent example as well.
+
+q3.py - Vigenere with keyword "HEALTH"
+  Same as q2a, with a per-letter trace printed for the write-up.
+
+--------------------------------------------------------------------------------
+SAMPLE QUESTION
+--------------------------------------------------------------------------------
+
+sample_questions/q1.py - "SecureNotes"
+  Menu-driven note store: choose a cipher, encrypt, store with a timestamp,
+  decrypt later, and brute-force an unknown ciphertext. Shows the exam
+  pattern (menu + stored records + timestamps) with Lab-1 material.
+
+--------------------------------------------------------------------------------
+COMMON MISTAKES TO AVOID
+--------------------------------------------------------------------------------
+  * forgetting % 26 -> letters go past Z and chr() produces junk
+  * using a multiplicative key that shares a factor with 26 -> no inverse
+  * not stripping spaces before encrypting (the manual always says to)
+  * Playfair: forgetting to replace J with I, or to insert X for doubles
+  * Hill: not padding the plaintext to a multiple of the block size

@@ -1,0 +1,125 @@
+================================================================================
+LAB 6 - DIGITAL SIGNATURES : WHAT IS USED AND WHY
+================================================================================
+
+LIBRARIES USED
+  pycryptodome : RSA, DSA, ECC keys; pkcs1_15, pss, DSS signature schemes
+  hashlib      : SHA-256 for the ElGamal / Schnorr implementations
+  socket       : for the client-server exercise
+
+--------------------------------------------------------------------------------
+THE PATTERN IS ALWAYS THE SAME
+--------------------------------------------------------------------------------
+  SIGN   : hash the message, then transform the hash with the PRIVATE key
+  VERIFY : hash the message, then check it with the PUBLIC key
+
+WHY HASH FIRST
+  * the message can be any length; the signature operation cannot
+  * raw RSA is malleable: sig(a)*sig(b) mod n = sig(a*b), so an attacker can
+    combine signatures into new valid ones. Hashing plus padding stops that.
+
+WHAT A SIGNATURE GIVES YOU
+  Authentication   - only the key owner could produce it
+  Integrity        - any change to the message breaks it
+  Non-repudiation  - the signer cannot later deny signing
+WHAT IT DOES NOT GIVE
+  Confidentiality. The message is still readable. Encrypt separately.
+
+ORDER MATTERS IN SCENARIO QUESTIONS
+  "sign the hash of the encrypted record" -> hash the CIPHERTEXT, then sign
+  "sign then encrypt"                     -> sign the plaintext, encrypt both
+  Read the wording; the marks are for the right order.
+
+--------------------------------------------------------------------------------
+THE SCHEMES
+--------------------------------------------------------------------------------
+RSA (pkcs1_15 or pss)
+    sign   s = H(m)^d mod n      verify  H(m) == s^e mod n
+    the default answer for any "digital signature" question
+
+DSA / ECDSA (DSS.new(key, 'fips-186-3'))
+    discrete-log based; ECDSA gives much smaller keys for the same security
+
+ElGamal signature
+    k random with gcd(k, p-1) = 1
+    r = g^k mod p
+    s = (H(m) - x*r) * k^-1 mod (p-1)        signature = (r, s)
+    verify: g^H(m) == y^r * r^s  (mod p)
+
+Schnorr signature
+    r = g^k mod p ; e = H(r || m) mod q ; s = (k + x*e) mod q
+    verify: recompute r' = g^s * y^-e mod p and check H(r' || m) mod q == e
+    HALF the size of an ElGamal signature, no modular inverse needed, and
+    the basis of DSA, EdDSA and Bitcoin Taproot.
+
+IN ALL OF THEM: k must be fresh, random and secret for EVERY signature.
+Reusing k lets anyone solve two equations for the private key x.
+
+--------------------------------------------------------------------------------
+EXERCISE QUESTIONS
+--------------------------------------------------------------------------------
+q1.py  ElGamal and Schnorr signatures, running the manual's four steps:
+         1 Alice signs, 2 Bob verifies, 3 Bob signs, 4 Alice verifies.
+       Also shows that Alice's signature fails under Bob's public key
+       (that is what "whose signature is identified?" means), and that a
+       one-character change breaks verification.
+
+q2.py  Diffie-Hellman. DH is NOT a signature scheme, so the answer has two
+       parts:
+         A) DH + HMAC - gives integrity and authentication between the two
+            parties, but NOT non-repudiation, because both hold the same key
+            and either could have made the tag.
+         B) Signed DH (DH for the shared secret + DSA for signatures) - this
+            is what TLS actually does.
+       Ends with a demonstration of the man-in-the-middle attack that
+       unsigned DH allows, and the fix.
+
+q3_server.py / q3_client.py  Client-server signature verification.
+       The server is a document authority: clients register a public key,
+       submit {document, signature}, and the server verifies and records the
+       result in a ledger with timestamps.
+       RUN THE SERVER FIRST, then:
+           python q3_client.py          -> VALID
+           python q3_client.py tamper   -> document changed  -> INVALID
+           python q3_client.py forge    -> signed with another key -> INVALID
+       The client prints the observation and analysis the question asks for.
+
+--------------------------------------------------------------------------------
+ADDITIONAL QUESTIONS
+--------------------------------------------------------------------------------
+q1.py  CIA triad with RSA + signatures + SHA-256.
+         Confidentiality - AES-GCM for the data + RSA-OAEP for the AES key
+         Integrity       - SHA-256 digest
+         Authenticity    - RSA signature (and non-repudiation)
+         Availability    - duplicate stores; the script deletes the primary
+                           and still serves the record from the backup
+       secure_send() / secure_receive() in this file are the reusable core
+       of almost every scenario question.
+
+q2.py  The manual's Part 1 worked properly. Parses the "0xc8 0x93 ..."
+       signature format, applies the public exponent (s^e mod n) and
+       recovers the plaintext - which is exactly what the online tool's
+       Verify button does. Both Alice's and BOB's stored signatures from the
+       manual are verified and produce their names. Then contrasts this raw
+       RSA with the correct hash-then-sign approach and explains why raw RSA
+       is unusable in practice.
+
+--------------------------------------------------------------------------------
+SAMPLE QUESTION
+--------------------------------------------------------------------------------
+sample_questions/q1.py - "SignDesk"
+  Employees upload AES-encrypted documents signed with RSA; managers verify,
+  decrypt and counter-sign; auditors see only hashes and can verify
+  signatures. Includes a tamper test. Run `python q1.py demo` for the
+  non-interactive walkthrough. Same shape as the EduSecure sample answer.
+
+--------------------------------------------------------------------------------
+COMMON MISTAKES
+--------------------------------------------------------------------------------
+  * signing with the PUBLIC key (it is always the private key that signs)
+  * forgetting that verify() RAISES instead of returning False - wrap it in
+    try/except and return a boolean so your menu stays clean
+  * signing the plaintext when the question says "sign the hash of the
+    encrypted record" (or the other way round)
+  * reusing k in ElGamal/Schnorr/DSA
+  * claiming a signature provides confidentiality

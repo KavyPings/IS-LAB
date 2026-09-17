@@ -1,0 +1,103 @@
+================================================================================
+SAMPLE QUESTION ANSWER - "EduSecure" : WHAT IS USED AND WHY
+================================================================================
+FILE : edusecure.py
+RUN  : python edusecure.py          (interactive menu)
+       python edusecure.py demo     (non-interactive walkthrough, no typing)
+
+--------------------------------------------------------------------------------
+THE QUESTION IN ONE LINE
+--------------------------------------------------------------------------------
+Menu-driven secure academic record system with DES encryption, RSA digital
+signatures, SHA-256 hashing and three roles (Student, Faculty, HoD).
+
+--------------------------------------------------------------------------------
+WHAT EACH LIBRARY IS FOR
+--------------------------------------------------------------------------------
+  Crypto.Cipher.DES        symmetric encryption of the record (confidentiality)
+  Crypto.Util.Padding      DES needs data in 8-byte blocks -> pad / unpad
+  Crypto.PublicKey.RSA     generate and load each user's 2048-bit key pair
+  Crypto.Signature.pkcs1_15  sign and verify (authenticity, non-repudiation)
+  Crypto.Hash.SHA256       the hash object the signature scheme needs
+  hashlib                  SHA-256 for the record hash and password hashing
+  json / base64            store the records; base64 turns bytes into text
+  datetime                 timestamps on every record and verification
+  os                       key files, random salts
+
+--------------------------------------------------------------------------------
+THE FLOW - THIS IS WHERE THE MARKS ARE
+--------------------------------------------------------------------------------
+STUDENT (upload)
+   1. ciphertext = DES_encrypt(record)              confidentiality
+   2. digest     = SHA256(ciphertext)               integrity
+   3. signature  = RSA_sign(digest, student_private) authenticity
+   4. store {ciphertext, digest, signature, timestamp}
+
+FACULTY (review)
+   1. recompute SHA256(ciphertext), compare with the stored digest  -> INTEGRITY
+   2. RSA_verify(digest, signature, student_public)                 -> AUTHENTICITY
+   3. DES_decrypt(ciphertext) with the shared key                   -> read it
+   4. store the verification result with a timestamp
+
+   NOTE the ORDER: integrity and signature are checked BEFORE decrypting.
+   Never process data you have not yet proved is unmodified.
+
+HoD
+   sees only {filename, owner, hash, timestamp} - never the plaintext,
+   and can verify any signature.
+
+--------------------------------------------------------------------------------
+ACCESS CONTROL
+--------------------------------------------------------------------------------
+One dictionary IS the access control:
+
+    ROLES = {"student": {"upload", "view_own"},
+             "faculty": {"decrypt", "verify", "hash", "view_all", ...},
+             "hod":     {"view_hashes", "verify"}}
+
+Every operation starts with require(session, "action"), which raises
+PermissionError if the role is not allowed. To adapt this to a different
+question, edit this dict and nothing else.
+
+Passwords are stored as SHA-256(salt + password), never in plain text.
+
+--------------------------------------------------------------------------------
+STORAGE
+--------------------------------------------------------------------------------
+A single JSON file (edusecure_db.json) acts as the database:
+    {"users": {...}, "records": [...], "verifications": [...]}
+Bytes (ciphertext, signature) are base64-encoded so they fit in JSON.
+RSA keys are written as .pem files in edusecure_keys/.
+The question says "use any file or database structure" - JSON is the
+fastest thing to write correctly under exam time pressure.
+
+--------------------------------------------------------------------------------
+HOW TO REUSE THIS FILE AS A BOILERPLATE
+--------------------------------------------------------------------------------
+The file is split into nine labelled sections. For a different question:
+
+  SECTION 2  swap des_encrypt/des_decrypt for AES, 3DES or a classical cipher
+  SECTION 3  swap SHA-256 for MD5/SHA-1/SHA-512, or add HMAC
+  SECTION 4  swap RSA signatures for ElGamal, Schnorr, DSA or ECDSA
+             (all of those are in Concepts/c09_digital_signature.py)
+  SECTION 5  keep as is - JSON storage works for everything
+  SECTION 6  edit the ROLES dict to match the new question's roles
+  SECTION 7  rename the three operation functions to match the new story
+  SECTION 8  edit the menu text
+  SECTION 9  edit the demo so you can show the examiner the whole flow fast
+
+Everything else stays identical. That is the point of the structure.
+
+--------------------------------------------------------------------------------
+WHAT THE DEMO PROVES (python edusecure.py demo)
+--------------------------------------------------------------------------------
+  * a student uploads: ciphertext, hash and signature are shown
+  * a faculty member decrypts and both checks pass
+  * the HoD sees hashes only
+  * the HoD is REFUSED when trying to decrypt      (access control works)
+  * one bit is flipped in the stored ciphertext and the integrity check
+    FAILS while the signature still verifies       (tamper detection works,
+    because the signature covers the ORIGINAL hash, not the edited data)
+
+Showing that last point to the examiner is worth doing - it proves you
+understand what each mechanism actually protects.

@@ -1,0 +1,95 @@
+================================================================================
+LAB 5 - HASHING : WHAT IS USED AND WHY
+================================================================================
+
+LIBRARIES USED
+  hashlib  - built into Python, nothing to install. md5, sha1, sha256, sha512
+  hmac     - built in. Keyed hashing and timing-safe comparison
+  socket   - built in. Client/server transmission
+  struct   - built in. Packs the 4-byte message length used for framing
+
+WHY NO pycryptodome HERE: hashlib already has every hash the lab needs.
+
+--------------------------------------------------------------------------------
+THE FOUR THINGS TO KNOW
+--------------------------------------------------------------------------------
+1. A hash maps any input to a fixed-size output.
+     hashlib.sha256(b"data").hexdigest()   -> 64 hex characters (256 bits)
+     .digest() gives raw bytes, .hexdigest() gives a string.
+     ALWAYS pass bytes, so .encode() a string first.
+
+2. Properties: one-way (cannot invert), collision-free (cannot find two
+   inputs with the same digest), avalanche (1 bit in -> ~half the bits out).
+
+3. A hash gives INTEGRITY only. It does not prove WHO produced it, because
+   anyone can hash anything. For that you need either
+     HMAC       - a hash keyed with a shared secret (both sides know the key)
+     SIGNATURE  - a hash encrypted with a private key (Lab 6)
+
+4. Comparing digests: use hmac.compare_digest(a, b), not ==.
+   It runs in constant time, so an attacker cannot learn the correct digest
+   one character at a time by measuring how long the comparison takes.
+
+--------------------------------------------------------------------------------
+EXERCISE QUESTIONS
+--------------------------------------------------------------------------------
+q1.py  The custom hash the manual specifies (djb2 style).
+         h = 5381                        chosen constant, spreads values well
+         h = h*33 + ord(ch)              33 shifts old bits up, keeps history
+         h ^= h >> 15                    mixes HIGH bits back into LOW bits
+         h = (h << 5) ^ h                extra diffusion
+         h &= 0xFFFFFFFF                 python ints are unbounded - mask to 32 bits
+       The script prints a step trace, an avalanche test and a distribution
+       test over 10000 strings. It ends by noting that 32 bits is fine for a
+       hash table but useless for security (collisions after ~2^16 inputs).
+
+q2_server.py / q2_client.py  Socket integrity check.
+       Server hashes whatever it receives and sends the digest back; the
+       client compares it with its own digest.
+       RUN THE SERVER FIRST in one terminal, then the client in another:
+           python q2_server.py
+           python q2_client.py           -> INTEGRITY OK
+           python q2_client.py corrupt   -> INTEGRITY FAILED
+       MESSAGE FRAMING: TCP is a byte stream, so one recv() may return half
+       a message. Every message is therefore sent as
+           4-byte big-endian length  +  payload
+       and recv_exact() loops until it has exactly that many bytes. Without
+       this your socket program works on short messages and breaks on long
+       ones - a very common exam bug.
+
+q3.py  MD5 vs SHA-1 vs SHA-256: computation time and collision detection.
+       IMPORTANT POINT: full-length digests will NEVER collide on 100 random
+       strings - the space is far too large. To actually SEE the birthday
+       effect the script also truncates each digest to 16/20/24/32 bits and
+       counts collisions over 2000 strings. That truncation experiment is
+       what demonstrates the concept.
+       Findings: MD5 is fastest but BROKEN (collisions since 2004), SHA-1 is
+       also broken (SHAttered, 2017), SHA-256 has no known collision.
+
+--------------------------------------------------------------------------------
+ADDITIONAL QUESTION
+--------------------------------------------------------------------------------
+q1_server.py / q1_client.py  Multi-part transmission.
+       The client splits the message into 5 parts and sends
+           b"PART" + chunk   ... then b"END"
+       The server accumulates the parts, hashes the REASSEMBLED message and
+       returns the digest. Running the client with the argument `drop` skips
+       one part, and the hash comparison then fails - which is exactly the
+       point of the exercise.
+
+--------------------------------------------------------------------------------
+SAMPLE QUESTION
+--------------------------------------------------------------------------------
+sample_questions/q1.py - "FileGuard"
+  Registers a document's SHA-256 and HMAC with a timestamp, verifies it
+  later, detects modification, restricts the register to admins, and runs
+  the MD5/SHA-1/SHA-256 comparison for the audit report.
+
+--------------------------------------------------------------------------------
+COMMON MISTAKES
+--------------------------------------------------------------------------------
+  * hashing a str instead of bytes -> TypeError. Use .encode()
+  * using == to compare digests instead of hmac.compare_digest
+  * assuming full SHA-256 digests will collide in a 100-string experiment
+  * writing a socket loop with a bare recv(1024) - it breaks on long messages
+  * starting the client before the server (connection refused)

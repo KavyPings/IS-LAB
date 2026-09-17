@@ -1,0 +1,102 @@
+================================================================================
+LAB 4 - ADVANCED ASYMMETRIC KEY CRYPTOGRAPHY : WHAT IS USED AND WHY
+================================================================================
+
+LIBRARIES USED
+  pycryptodome : RSA, AES, PKCS1_OAEP, pkcs1_15, PBKDF2
+  plain python : Rabin and ElGamal (not in the library), Miller-Rabin, CRT
+
+--------------------------------------------------------------------------------
+THE SIX OPERATIONS EVERY "KEY MANAGEMENT SYSTEM" QUESTION WANTS
+--------------------------------------------------------------------------------
+Whatever the story (SecureCorp, HealthCare, DigiRights, CampusVault), the
+marks are for the same six things. Build them in this order:
+
+  1. GENERATION   create a key pair per entity, configurable size
+  2. DISTRIBUTION hand out the PUBLIC key freely; the PRIVATE key only to
+                  its owner, and only against a credential
+  3. REVOCATION   a flag that makes every later operation refuse the key
+  4. RENEWAL      generate a fresh pair; also invalidate cached session keys
+  5. SECURE STORE private keys encrypted at rest: PBKDF2(password) -> AES-GCM
+  6. AUDIT LOG    one timestamped line per operation, appended to a file
+
+Add ACCESS CONTROL (a role -> permissions dict) and you have the whole lab.
+
+--------------------------------------------------------------------------------
+WHY PBKDF2 + AES-GCM FOR STORAGE
+--------------------------------------------------------------------------------
+  PBKDF2(password, salt, count=100000) turns a human password into a 32-byte
+  key, and is deliberately slow so brute-forcing the password is expensive.
+  AES-GCM encrypts AND authenticates: a wrong password fails the MAC check
+  instead of returning garbage. That is why a wrong password raises
+  ValueError in these scripts rather than producing a broken key.
+
+--------------------------------------------------------------------------------
+RABIN CRYPTOSYSTEM (exercise q2)
+--------------------------------------------------------------------------------
+  primes p = q = 3 (mod 4)  ("Blum primes"), public key n = p*q
+  encrypt : c = m^2 mod n                       - ONE squaring, very fast
+  decrypt : mp = c^((p+1)/4) mod p
+            mq = c^((q+1)/4) mod q
+            combine with CRT -> FOUR square roots
+  THE PROBLEM: four candidates, only one is the message.
+  THE FIX used here: append a marker "##" before encrypting; the root that
+  still ends with "##" is the real plaintext. (Real systems use a hash or a
+  length field for the same purpose.)
+  Security = factoring, PROVABLY. That is Rabin's one advantage over RSA.
+
+--------------------------------------------------------------------------------
+EXERCISE QUESTIONS
+--------------------------------------------------------------------------------
+q1.py  SecureCorp. Three subsystems with RSA identity keys AND Diffie-Hellman
+       session keys. Sending = AES-GCM with the DH session key + an RSA
+       signature over the document. Also shows an offline path (RSA-wrapped
+       AES key), tamper detection, adding a fourth subsystem (scalability),
+       revocation and renewal.
+       KEY DETAIL: when a key is renewed, every peer must DROP its cached
+       session key, otherwise it keeps using a key derived from the old
+       DH value and decryption fails. _forget_sessions_with() does that.
+
+q2.py  HealthCare Inc. Rabin key management service with all six operations,
+       private keys sealed with PBKDF2+AES-GCM, an audit log file, 12-month
+       renewal, and a written RABIN vs RSA trade-off analysis plus HIPAA
+       compliance notes. Run `python q2.py demo` for the non-interactive run.
+
+--------------------------------------------------------------------------------
+ADDITIONAL QUESTIONS
+--------------------------------------------------------------------------------
+q1.py  DigiRights DRM with ElGamal. Content is AES-encrypted and the AES key
+       is wrapped under the ElGamal master public key. Access control covers
+       time-limited grants, revoking a customer, creator-owned content, an
+       emergency master-key revocation, and a 24-month renewal that RE-WRAPS
+       every stored content key under the new master key.
+       NOTE: a 2048-bit safe prime takes minutes to generate, so the demo
+       uses 256 bits. Pass bits=2048 if you have the time.
+
+q2.py  XYZ Logistics - attacking weak RSA. Three attacks:
+         1. modulus far too small      -> trial division
+         2. p and q too close together -> FERMAT FACTORISATION
+              n = a^2 - b^2 = (a-b)(a+b); start at a = ceil(sqrt(n)) and step
+              up until a^2 - n is a perfect square. Breaks a 512-bit key in
+              one step when the primes are adjacent.
+         3. two keys sharing a prime   -> gcd(n1, n2) finds it instantly
+       Then d = e^-1 mod (p-1)(q-1) gives the full private key.
+       Ends with seven concrete mitigations.
+
+--------------------------------------------------------------------------------
+SAMPLE QUESTION
+--------------------------------------------------------------------------------
+sample_questions/q1.py - "CampusVault"
+  Combines everything: RSA key service + sealed private keys + signed and
+  encrypted documents + three roles (admin / department / auditor) +
+  revocation, renewal and an audit log. Closest practice to the mid-term.
+
+--------------------------------------------------------------------------------
+COMMON MISTAKES
+--------------------------------------------------------------------------------
+  * forgetting to clear cached session keys after a renewal
+  * storing private keys in plain text (the question explicitly asks for
+    "secure storage" - that means encrypted at rest)
+  * no timestamps in the audit log
+  * Rabin: returning all four roots instead of using redundancy to pick one
+  * generating 2048-bit safe primes for ElGamal during an exam

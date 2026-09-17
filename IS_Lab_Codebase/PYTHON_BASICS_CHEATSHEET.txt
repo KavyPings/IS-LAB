@@ -1,0 +1,223 @@
+================================================================================
+PYTHON BASICS CHEAT SHEET FOR THE INFORMATION SECURITY LAB
+Small built-in operations that get asked as part of a bigger question.
+================================================================================
+
+--------------------------------------------------------------------------------
+1. STRING CLEANING AND FILTERING
+--------------------------------------------------------------------------------
+s.upper()  s.lower()  s.title()  s.swapcase()          change case
+s.strip()  s.lstrip()  s.rstrip()                      remove whitespace
+s.replace(" ", "")                                     remove all spaces
+"".join(c for c in s if c.isalpha())                   keep only letters
+"".join(c for c in s if not c.isdigit())               REMOVE ALL NUMBERS
+"".join(c for c in s if c.isdigit())                   keep only digits
+"".join(c for c in s if c.isalnum())                   drop punctuation
+"".join(c for c in s if c not in "aeiouAEIOU")         remove vowels
+s.split()          s.split(",")        " ".join(list)  split / join
+s[::-1]                                                reverse a string
+s.count("a")                                           count occurrences
+s.find("ab")   s.index("ab")                           position of a substring
+s.startswith("ab")   s.endswith("xy")                  prefix / suffix test
+s.zfill(8)                                             pad with leading zeros
+s.ljust(10, "*")   s.rjust(10, "*")   s.center(20)     padding / centring
+s.isalpha() .isdigit() .isalnum() .isupper() .islower()  tests
+
+--------------------------------------------------------------------------------
+2. CHARACTER <-> NUMBER  (the core of every classical cipher)
+--------------------------------------------------------------------------------
+ord('A')                   -> 65          character to ASCII code
+chr(65)                    -> 'A'         ASCII code to character
+ord(c) - 65                -> 0..25       A=0 ... Z=25
+chr(n % 26 + 65)           -> letter      number back to letter, wrapped
+ord(c) - ord('a')                         same thing for lowercase
+[ord(c) for c in "ABC"]    -> [65,66,67]
+"".join(chr(n) for n in [72,73])  -> "HI"
+
+--------------------------------------------------------------------------------
+3. BYTES <-> STRING
+--------------------------------------------------------------------------------
+"text".encode()                       str  -> bytes   (b'text')
+b"text".decode()                      bytes -> str
+b"text".decode(errors="replace")      safe when the bytes are not real text
+bytes([72, 73])                       -> b'HI'
+list(b"HI")                           -> [72, 73]
+bytearray(b"HI")                      mutable version (needed to flip a bit)
+
+--------------------------------------------------------------------------------
+4. HEX  (how ciphertext is printed)
+--------------------------------------------------------------------------------
+b"\xa1\xb2".hex()                     -> 'a1b2'
+bytes.fromhex("a1b2")                 -> b'\xa1\xb2'
+hex(255)                              -> '0xff'
+int("ff", 16)                         -> 255
+f"{255:02x}"                          -> 'ff'        2 digits, lowercase
+f"{255:02X}"                          -> 'FF'        2 digits, uppercase
+" ".join(f"0x{b:02x}" for b in data)  -> '0xa1 0xb2' (the manual's format)
+bytes(int(t,16) for t in text.split())  parse '0xa1 0xb2 ...' back to bytes
+
+--------------------------------------------------------------------------------
+5. BINARY AND BITS
+--------------------------------------------------------------------------------
+bin(10)                               -> '0b1010'
+bin(10)[2:]                           -> '1010'
+f"{10:08b}"                           -> '00001010'   8 bits, zero padded
+int("1010", 2)                        -> 10
+" ".join(f"{b:08b}" for b in b"AB")   bytes -> binary string
+bin(x).count("1")                     count set bits (population count)
+bin(a ^ b).count("1")                 HAMMING DISTANCE (avalanche test)
+a ^ b   a & b   a | b   ~a            XOR, AND, OR, NOT
+a << 2    a >> 2                      shift left / right
+x & 0xFFFFFFFF                        keep only the low 32 bits
+bytes(x ^ y for x, y in zip(a, b))    XOR two byte strings (one-time pad)
+bytes(x ^ k[i % len(k)] for i, x in enumerate(data))   XOR with a short key
+
+--------------------------------------------------------------------------------
+6. BASE64  (safe way to put ciphertext in a text file or JSON)
+--------------------------------------------------------------------------------
+import base64
+base64.b64encode(data).decode()       bytes -> text
+base64.b64decode(text)                text  -> bytes
+base64.b16encode / b32encode          hex / base32 variants
+
+--------------------------------------------------------------------------------
+7. INTEGERS  (needed for RSA / ElGamal / Rabin)
+--------------------------------------------------------------------------------
+int.from_bytes(b"Hi", "big")          bytes -> a big integer
+i.to_bytes((i.bit_length()+7)//8, "big")   integer -> bytes
+i.bit_length()                        how many bits the number needs
+pow(base, exp, mod)                   FAST modular exponentiation (m^e mod n)
+pow(a, -1, m)                         modular inverse (Python 3.8+)
+divmod(a, b)                          -> (a//b, a%b)
+math.gcd(a, b)                        greatest common divisor
+math.isqrt(n)                         integer square root (Fermat factoring)
+abs(x)   round(x, 2)   int(x)   float(x)
+
+--------------------------------------------------------------------------------
+8. HASHING
+--------------------------------------------------------------------------------
+import hashlib, hmac
+hashlib.sha256(b"data").hexdigest()          64 hex chars
+hashlib.sha256(b"data").digest()             32 raw bytes
+hashlib.new("md5", b"data").hexdigest()      pick the algorithm by name
+hashlib.algorithms_available                 what this machine supports
+hmac.new(key, msg, hashlib.sha256).hexdigest()   keyed hash
+hmac.compare_digest(a, b)                    TIMING-SAFE comparison - use this
+h = hashlib.sha256(); h.update(chunk); h.hexdigest()   hash a file in pieces
+
+--------------------------------------------------------------------------------
+9. RANDOMNESS
+--------------------------------------------------------------------------------
+import random, os, string
+random.randint(1, 10)                 inclusive both ends
+random.randrange(2, n)                excludes n
+random.choice(seq)                    one random element
+random.choices(pool, k=8)             k elements WITH repetition
+random.sample(seq, 5)                 5 elements WITHOUT repetition
+random.shuffle(lst)                   shuffle in place
+random.getrandbits(256)               a random 256-bit integer
+"".join(random.choices(string.ascii_letters + string.digits, k=12))
+os.urandom(16)                        CRYPTOGRAPHICALLY secure random bytes
+from Crypto.Random import get_random_bytes; get_random_bytes(16)   same, in pycryptodome
+    -> use os.urandom / get_random_bytes for KEYS, random.* only for demos
+
+--------------------------------------------------------------------------------
+10. LISTS, DICTS, LOOPS
+--------------------------------------------------------------------------------
+[x*2 for x in lst]                        list comprehension
+[x for x in lst if x > 3]                 filter
+{k: v for k, v in pairs}                  dict comprehension
+sorted(lst)   sorted(lst, reverse=True)   sorted(lst, key=len)
+sorted(d.items(), key=lambda kv: kv[1])   sort a dict by value
+enumerate(lst)                            -> (index, value)
+zip(a, b)                                 pair two lists
+set(lst)                                  unique values
+lst.append(x)  lst.extend(y)  lst.insert(0,x)  lst.pop()  lst.remove(x)
+d.get(k, default)   d.setdefault(k, [])   d.keys()  d.values()  d.items()
+sum(lst)  max(lst)  min(lst)  len(lst)  any(lst)  all(lst)
+range(0, len(s), 8)                       step through a string in blocks
+[s[i:i+8] for i in range(0, len(s), 8)]   SPLIT INTO BLOCKS (very common)
+
+--------------------------------------------------------------------------------
+11. FILES
+--------------------------------------------------------------------------------
+open("f.txt").read()                       read whole text file
+open("f.txt").readlines()                  list of lines
+open("f.txt", "w").write(text)             write (overwrites)
+open("f.txt", "a").write(text)             append
+open("f.bin", "rb").read()                 read BYTES  (ciphertext, images)
+open("f.bin", "wb").write(data)            write bytes
+with open("f.txt") as f: ...               auto-closes - prefer this
+import os; os.path.exists(p)  os.makedirs(p, exist_ok=True)  os.remove(p)
+os.listdir(".")                            files in a folder
+import json
+json.dump(obj, open("f.json","w"), indent=2)     save
+json.load(open("f.json"))                        load
+
+--------------------------------------------------------------------------------
+12. TIME AND TIMESTAMPS
+--------------------------------------------------------------------------------
+import time
+from datetime import datetime, timedelta
+time.perf_counter()                        high-resolution timer - USE THIS
+t0 = time.perf_counter(); ...; time.perf_counter() - t0      elapsed seconds
+datetime.now()                             current time object
+datetime.now().strftime("%Y-%m-%d %H:%M:%S")     formatted timestamp
+datetime.now().isoformat(timespec="seconds")
+datetime.now() + timedelta(days=365, hours=2)    add time
+datetime.fromisoformat(s)                  parse it back
+(t2 - t1).total_seconds()                  difference in seconds
+
+--------------------------------------------------------------------------------
+13. FORMATTING OUTPUT  (makes the demo look like a real system)
+--------------------------------------------------------------------------------
+f"{name:<12}{value:>8}"            left / right align in a column
+f"{x:8.3f}"                        8 wide, 3 decimal places
+f"{x:,}"                           thousands separator
+f"{x:.2%}"                         percentage
+f"{x:08b}"  f"{x:02x}"  f"{x:o}"   binary / hex / octal
+print(s[:60] + "...")              trim long hex so the screen stays readable
+print("=" * 60)                    separator line
+print("TITLE".center(60))          centred heading
+print(*lst, sep=", ")              print a list neatly
+
+--------------------------------------------------------------------------------
+14. MENU AND INPUT (every scenario question needs this)
+--------------------------------------------------------------------------------
+choice = input("choice> ").strip()
+n = int(input("number: "))                 wrap in try/except ValueError
+while True:
+    print("1 do this  2 do that  0 exit")
+    c = input("> ").strip()
+    if c == "1": ...
+    elif c == "0": break
+
+try:
+    ...
+except ValueError as e:
+    print("error:", e)
+except PermissionError as e:
+    print("ACCESS DENIED:", e)
+finally:
+    ...
+raise PermissionError("role not allowed")
+
+import sys
+sys.argv[1] if len(sys.argv) > 1 else "default"     command line argument
+
+--------------------------------------------------------------------------------
+15. QUICK CONVERSION TABLE (what to reach for)
+--------------------------------------------------------------------------------
+  have            want             use
+  ----            ----             ---
+  str             bytes            s.encode()
+  bytes           str              b.decode()
+  bytes           hex string       b.hex()
+  hex string      bytes            bytes.fromhex(h)
+  bytes           int              int.from_bytes(b, "big")
+  int             bytes            i.to_bytes(n, "big")
+  int             binary string    f"{i:08b}"
+  binary string   int              int(s, 2)
+  bytes           base64 text      base64.b64encode(b).decode()
+  letter          0-25             ord(c) - 65
+  0-25            letter           chr(n % 26 + 65)
