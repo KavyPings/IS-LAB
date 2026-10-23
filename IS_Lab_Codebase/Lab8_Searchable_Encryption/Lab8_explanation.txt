@@ -1,0 +1,179 @@
+================================================================================
+LAB 8 - SEARCHABLE ENCRYPTION : WHAT IS USED AND WHY
+================================================================================
+
+LIBRARIES USED
+  pycryptodome : AES (CBC and GCM), RSA, PKCS1_OAEP, pkcs1_15, SHA256
+  hashlib      : SHA-256 for the public tokens
+  hmac         : HMAC-SHA256 for the keyed search tokens, and compare_digest
+  Crypto.Util.number : getPrime, GCD for the Paillier index in exercise 2
+  re, collections    : the Snort-style rule engine in additional q2
+
+  Nothing else. No "phe", no NumPy, no network access.
+
+--------------------------------------------------------------------------------
+THE ONE IDEA
+--------------------------------------------------------------------------------
+Searchable encryption lets a server FIND a record without being able to READ it.
+
+Three parts, always:
+
+  ENCRYPTION   the documents are stored as ciphertext
+  INDEXING     an inverted index maps a search term to the matching document
+               ids, and that index is itself protected
+  QUERY        the client turns the query into a token, the server matches
+               tokens, and returns encrypted ids the client decrypts
+
+  SSE  (symmetric)  one shared secret key. Fast. The searcher can also decrypt.
+  PKSE (public key) public key to write, private key to read. Many writers,
+                    one reader. Flexible, but much slower.
+
+--------------------------------------------------------------------------------
+THE MISTAKE IN THE MANUAL - READ THIS BEFORE YOU COPY THE LISTING
+--------------------------------------------------------------------------------
+Both sample listings in the manual use the ENCRYPTED word as the dictionary
+KEY of the index:
+
+      encrypted_index[encrypt(key, word_hash)] = [...]
+
+AES-CBC picks a random IV and RSA-OAEP picks random padding, so encrypting the
+same word twice produces two different byte strings. The lookup can therefore
+NEVER match, and the sample prints an empty list. (The SSE listing also has
+broken indentation and a decrypt_data(key, *encrypt_data(...))[0] call that
+returns one character.)
+
+The fix, which is what real schemes do:
+
+      index KEY   = a DETERMINISTIC token
+                    SSE : HMAC-SHA256(secret_key, word)
+                    PKSE: SHA-256(word)              (public, anyone can build it)
+      index VALUE = RANDOMISED encryption of the document id
+                    SSE : AES-CBC(secret_key, doc_id)
+                    PKSE: Paillier(doc_number)
+
+Say this in the write-up. "The deterministic token is what makes the search
+possible and is also the scheme's main leakage" is a mark-scoring sentence.
+
+--------------------------------------------------------------------------------
+SSE - THE FOUR FUNCTIONS TO WRITE
+--------------------------------------------------------------------------------
+  encrypt_data(key, data)        -> (iv, ciphertext)      AES-CBC + PKCS#7
+  decrypt_data(key, iv, ct)      -> text
+  token(key, word)               -> HMAC-SHA256 hex       deterministic
+  create_index(documents, key)   -> {token: [(iv, enc_id)]}
+  search(index, query, key)      -> decrypt the ids, fetch the documents
+
+  Use set(text.lower().split()) when indexing so a word that appears twice in
+  one document does not create two postings.
+
+--------------------------------------------------------------------------------
+PKSE - WHAT CHANGES
+--------------------------------------------------------------------------------
+  * the index key is a plain SHA-256 hash, so anybody holding the PUBLIC key
+    can add documents to the index
+  * the document id is a NUMBER, because Paillier encrypts numbers
+    ("doc7" -> 7, and back again on decryption)
+  * only the private key holder can turn a posting list into document ids
+  * the server can still COUNT matches with no key at all
+
+  Honest limitation to state: proper PKSE with randomised tokens (Boneh's
+  PEKS) needs bilinear pairings, which is outside this syllabus.
+
+--------------------------------------------------------------------------------
+THINGS AN EXAM QUESTION ADDS ON TOP, AND HOW TO DO EACH ONE
+--------------------------------------------------------------------------------
+  "search by constituency / department / branch"
+        index a label, not a word:  index_add("cat:" + value, doc_id)
+
+  "search by date or time range"
+        bucket the timestamp and expand the range into buckets:
+            index_add("time:" + stamp[:16], doc_id)      one bucket per minute
+        a query for 10:00-10:10 looks up eleven tokens
+
+  "search by amount between X and Y"
+        same trick on a number:  index_add("num:%d" % (value // 100), doc_id)
+
+  "multi keyword search"
+        AND = intersection of the posting lists, OR = union,
+        NOT = all ids minus the posting list
+
+  "partial or prefix search"
+        index every prefix of every word as its own token
+
+  "add or remove documents later"
+        adding is just another index_add. Deleting without telling the server
+        which postings to drop needs an encrypted revocation list that is
+        filtered on search. additional_questions/q3.py does both.
+
+--------------------------------------------------------------------------------
+THE LEAKAGE - THE "SECURITY AND EFFICIENCY TRADE-OFF" OBJECTIVE
+--------------------------------------------------------------------------------
+  what stays hidden : the documents, the keywords, the document ids
+  what leaks        : how many documents matched (result-length leakage)
+                      which token was queried, and how often (search pattern)
+                      which documents a token points to (access pattern)
+                      the shape of the index (how many distinct terms)
+
+  THE COUNT ATTACK: the server cannot read a token, but it can count its
+  postings. Word frequencies in natural language are very uneven, so matching
+  observed posting-list sizes against a frequency table recovers the common
+  keywords. additional_questions/q3.py runs this and then shows the standard
+  defence - PADDING every posting list to the same length, which cost 4.9x
+  storage on the ten-document corpus.
+
+--------------------------------------------------------------------------------
+THE FILES
+--------------------------------------------------------------------------------
+exercise_questions/q1.py   SSE, the manual's exercise 1 done correctly.
+                           10 documents, AES-CBC, HMAC tokens, an inverted
+                           index, keyword search, an AND query, and a prompt
+                           so the examiner can type a word. Explains the
+                           manual's bug in the header.
+
+exercise_questions/q2.py   PKSE, the manual's exercise 2 with Paillier.
+                           Same 10 documents, SHA-256 tokens, Paillier
+                           encrypted document numbers, and the SSE vs PKSE
+                           comparison the manual asks for.
+
+additional_questions/q1.py GnuPG. The real gpg command sequence as comments,
+                           then the same sign-then-encrypt OpenPGP workflow
+                           implemented with pycryptodome so it runs: hybrid
+                           AES-GCM + RSA-OAEP, detached RSA signature, an
+                           interception test, a tampering test and a
+                           wrong-signer test.
+
+additional_questions/q2.py Snort. The real snort / tcpdump commands and a
+                           local.rules file as comments, then a Snort-style
+                           rule engine in Python: parses rules in Snort
+                           syntax, replays a captured traffic log, applies
+                           content and flags and threshold options, prints
+                           alerts in Snort's format and analyses them into a
+                           conclusion (port scan, SQL injection, cleartext
+                           telnet).
+
+additional_questions/q3.py The trade-off question in full: AND / OR / NOT,
+                           prefix search, range search, a dynamic index with
+                           add and delete, the count attack and padding, and
+                           a trade-off table for the write-up.
+
+sample_questions/q1.py     "SecureDocs" scenario: menu driven encrypted
+                           document archive. AES-256-CBC content, HMAC-SHA256
+                           search tokens, SHA-256 integrity, RSA signatures,
+                           search by keyword / category / time range, a
+                           tamper test, three roles and an audit log.
+                           python q1.py demo  for the no-typing run.
+
+--------------------------------------------------------------------------------
+COMMON MISTAKES
+--------------------------------------------------------------------------------
+  * using a randomised ciphertext as the index key, so nothing ever matches
+    (the manual's bug - do not reproduce it)
+  * forgetting .lower() on either the indexed word or the query, so "Data"
+    and "data" get different tokens
+  * indexing the same word twice from one document and then printing the same
+    result twice - use set(), or set() the results
+  * building the index from the PLAINTEXT and then forgetting to encrypt the
+    documents themselves
+  * claiming the scheme leaks nothing. It leaks counts and patterns; say so.
+  * trying to run snort or gpg inside a virtual environment. Show the
+    commands, run the Python version.

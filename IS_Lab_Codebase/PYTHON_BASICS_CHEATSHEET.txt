@@ -1,6 +1,9 @@
 ================================================================================
-PYTHON BASICS CHEAT SHEET FOR THE INFORMATION SECURITY LAB
+PYTHON BASICS CHEAT SHEET FOR THE INFORMATION SECURITY LAB   (Lab 1 - Lab 8)
 Small built-in operations that get asked as part of a bigger question.
+Every one-liner in sections 1-3 also exists as a NAMED FUNCTION in
+Concepts/c17_text_and_data_utilities.py, so you can paste a function instead
+of remembering the comprehension.
 ================================================================================
 
 --------------------------------------------------------------------------------
@@ -22,6 +25,19 @@ s.startswith("ab")   s.endswith("xy")                  prefix / suffix test
 s.zfill(8)                                             pad with leading zeros
 s.ljust(10, "*")   s.rjust(10, "*")   s.center(20)     padding / centring
 s.isalpha() .isdigit() .isalnum() .isupper() .islower()  tests
+"".join(c for c in s if c not in "!,.?;:")             remove chosen characters
+"".join(c for c in s if c in "ABCDEF0123456789")       keep chosen characters
+"".join(c for c in s if c not in string.punctuation)   remove ALL punctuation
+import re; re.sub(r"\s+", " ", s).strip()              squeeze repeated spaces
+import re; re.sub(r"[^A-Za-z]", "", s)                 regex version of "letters only"
+import re; re.sub(r"\D", "", s)                        regex version of "digits only"
+dict.fromkeys(s)                                       unique chars, order kept
+"".join(dict.fromkeys(s))                              REMOVE DUPLICATE LETTERS
+
+THE ONE LINE EVERY LAB 1 QUESTION NEEDS
+"".join(c for c in s.upper() if c.isalpha())           -> 'THEHOUSEISSOLD'
+    plus .replace("J", "I") for Playfair
+    c17: clean_for_cipher(s) and clean_for_playfair(s)
 
 --------------------------------------------------------------------------------
 2. CHARACTER <-> NUMBER  (the core of every classical cipher)
@@ -221,3 +237,73 @@ sys.argv[1] if len(sys.argv) > 1 else "default"     command line argument
   bytes           base64 text      base64.b64encode(b).decode()
   letter          0-25             ord(c) - 65
   0-25            letter           chr(n % 26 + 65)
+
+--------------------------------------------------------------------------------
+16. HOMOMORPHIC ARITHMETIC ON BIG INTEGERS  (Lab 7)
+--------------------------------------------------------------------------------
+from Crypto.Util.number import getPrime, GCD, isPrime
+getPrime(256)                          a random 256-bit prime
+isPrime(n)                             primality test
+GCD(a, b)                              gcd (same as math.gcd)
+pow(base, exp, mod)                    ALWAYS pass the modulus - never pow(a,b)
+pow(a, -1, m)                          modular inverse (Python 3.8+)
+pow(a, -x, m)                          inverse then power, in one call
+(c1 * c2) % (n * n)                    Paillier: adds the plaintexts
+(x - 1) // n                           the L() function - INTEGER division
+(1 + m * n) * pow(r, n, n*n) % (n*n)   Paillier encryption with g = n+1
+m % n                                  how to encrypt a NEGATIVE number
+m - n if m > n // 2 else m             how to read one back as negative
+base ** option                         packed counter for a per-option tally
+(total // base**k) % base              read counter k back out
+int(x).bit_length()                    how big a number is, in bits
+random.randrange(1, n)                 a blinding factor r
+
+--------------------------------------------------------------------------------
+17. KEYED TOKENS AND ENCRYPTED INDEXES  (Lab 8)
+--------------------------------------------------------------------------------
+import hmac, hashlib
+hmac.new(key, b"label", hashlib.sha256).hexdigest()    DETERMINISTIC token
+hashlib.sha256(b"label").hexdigest()                   public token (PKSE)
+index.setdefault(token, []).append(value)              build a posting list
+index.get(token, [])                                   look one up safely
+sorted(set(hits))                                      de-duplicate the results
+set.intersection(*list_of_sets)                        AND query
+set_a | set_b                                          OR query
+set(universe) - set(hits)                              NOT query
+stamp[:16]                                             'YYYY-MM-DD HH:MM' bucket
+word[:n] for n in range(3, len(word))                  prefix tokens
+value // 100                                           numeric bucket for ranges
+max(len(v) for v in index.values())                    longest posting list
+    -> pad every list to that length to stop the count attack
+
+WHY THE INDEX KEY MUST BE DETERMINISTIC
+    AES-CBC and RSA-OAEP are randomised, so encrypt(word) differs every time
+    and the lookup never matches. Keep randomised encryption for the VALUES.
+
+--------------------------------------------------------------------------------
+18. SECRET SHARING ARITHMETIC
+--------------------------------------------------------------------------------
+coeffs = [secret] + [random.randrange(1, P) for _ in range(t-1)]
+sum(c * pow(i, j, P) for j, c in enumerate(coeffs)) % P    share i = f(i)
+pow(den, -1, P)                        the inverse in Lagrange interpolation
+getPrime(secret.bit_length() + 16)     the field must be bigger than the secret
+shares = [r1, r2, secret - r1 - r2]    additive k-of-k split
+int.from_bytes(b"0123456789abcdef", "big")   split an AES key as a number
+number.to_bytes(16, "big")                   and put it back together
+
+--------------------------------------------------------------------------------
+19. MAKING A MENU-DRIVEN PROGRAM LOOK FINISHED
+--------------------------------------------------------------------------------
+print("MAIN MENU: 1 Client | 2 Server | 3 Analyst | 4 Exit")
+choice = input("Input Choice: ").strip()
+input("Record ID: ").strip() or "R001"        a default when Enter is pressed
+sys.argv[1] if len(sys.argv) > 1 else ""      python answer.py demo
+try: sys.stdout.reconfigure(errors="replace")
+except Exception: pass                        survives a cp1252 Windows console
+open(path, encoding="utf-8")                  be explicit about the encoding
+with open(path) as f: ...                     closes the handle - Windows needs
+                                              this before deleting the file
+shutil.rmtree(path, ignore_errors=True)       a reset that cannot crash
+os.remove inside try/except OSError           same idea for single files
+"%-10s %-8s %s" % (a, b, c)                   aligned columns without f-strings
+print(str(value)[:30] + "...")                keep long ciphertexts readable

@@ -8,9 +8,10 @@ This is the single file to copy into an exam answer folder.
     from ALL_CONCEPTS_TOOLKIT import *
 
 ...and you instantly have every cipher, hash, signature, key-management and
-access-control helper used anywhere in Labs 1-6.
+access-control helper used anywhere in Labs 1-8, plus the homomorphic and
+searchable-encryption helpers the end-sem syllabus adds.
 
-It is auto-assembled from the Concepts/c01..c13 files, so the code is
+It is auto-assembled from the Concepts/c01..c17 files, so the code is
 identical - read those files for the full comments and the per-concept demos.
 
 QUICK INDEX (search for the marker lines "### FROM c0x")
@@ -28,10 +29,21 @@ QUICK INDEX (search for the marker lines "### FROM c0x")
   c10  key management service (generate/distribute/revoke/renew/store/audit)
   c11  access control: RBAC, DAC matrix, Bell-LaPadula, time-limited grants
   c13  socket client/server with length-framed messages
+  c14  partial homomorphic encryption: Paillier (add), ElGamal and raw RSA
+       (multiply), packed vote counters, encrypted comparison
+  c15  searchable encryption: SSE (HMAC token + AES value), PKSE (SHA-256
+       token + Paillier value), tag / time / range / prefix labels,
+       AND-OR-NOT queries, posting-list padding
+  c16  threshold decryption: Shamir t-of-n, additive k-of-k, partial
+       decryptions
+  c17  text and data utilities: case conversion, removing numbers /
+       letters / punctuation / characters, cleaning text for a cipher,
+       blocks and digraphs, hex / binary / base64 / int conversion,
+       bit flipping, hamming distance, timestamps, JSON storage
 =============================================================================
 """
 
-import base64, hashlib, hmac, json, math, os, random, socket, string, struct, sys, time
+import base64, hashlib, hmac, json, math, os, random, re, socket, string, struct, sys, time
 from datetime import datetime, timedelta
 
 from Crypto.Cipher import DES, DES3, AES, PKCS1_OAEP
@@ -40,7 +52,8 @@ from Crypto.Signature import pkcs1_15, pss, DSS
 from Crypto.Hash import SHA256
 from Crypto.Util.Padding import pad, unpad
 from Crypto.Random import get_random_bytes
-from Crypto.Protocol.KDF import PBKDF2
+from Crypto.Protocol.KDF import PBKDF2, HKDF
+from Crypto.Util.number import GCD, getPrime, isPrime
 
 
 
@@ -1892,6 +1905,670 @@ def run_server_multipart(host=HOST, port=PORT):
 # ============================================================================
 ### SELF TEST
 # ============================================================================
+
+# ==========================================================================
+### FROM c14 : PARTIAL HOMOMORPHIC ENCRYPTION (Lab 7)
+# ==========================================================================
+
+def paillier_keygen(bits=512):
+    """Returns (public, secret). public = {n, g, nn}; secret is lambda."""
+    p = getPrime(bits // 2)
+    q = getPrime(bits // 2)
+    while p == q:
+        q = getPrime(bits // 2)
+    n = p * q
+    return {"n": n, "g": n + 1, "nn": n * n}, (p - 1) * (q - 1)
+
+
+def paillier_encrypt(m, pub):
+    """c = (1 + m*n) * r^n mod n^2 ; r fresh every time, so E(m) differs."""
+    n, nn = pub["n"], pub["nn"]
+    r = random.randrange(1, n)
+    while GCD(r, n) != 1:
+        r = random.randrange(1, n)
+    return ((1 + (m % n) * n) * pow(r, n, nn)) % nn
+
+
+def paillier_decrypt(c, pub, secret):
+    """m = L(c^lambda mod n^2) * lambda^-1 mod n, with L(x) = (x-1)//n."""
+    n, nn = pub["n"], pub["nn"]
+    u = (pow(c, secret, nn) - 1) // n
+    m = (u * pow(secret, -1, n)) % n
+    return m - n if m > n // 2 else m          # map large values back to negative
+
+
+def paillier_add(c1, c2, pub):
+    """E(a) * E(b) -> E(a + b)."""
+    return (c1 * c2) % pub["nn"]
+
+
+def paillier_add_plain(c, k, pub):
+    """E(a) * g^k -> E(a + k)."""
+    return (c * pow(pub["g"], k % pub["n"], pub["nn"])) % pub["nn"]
+
+
+def paillier_mul_plain(c, k, pub):
+    """E(a)^k -> E(a * k)."""
+    return pow(c, k, pub["nn"])
+
+
+def paillier_sub(c1, c2, pub):
+    """E(a) * E(b)^-1 -> E(a - b). Needed for any encrypted comparison."""
+    return (c1 * pow(c2, -1, pub["nn"])) % pub["nn"]
+
+
+def paillier_sum(ciphertexts, pub):
+    """Total of a list of ciphertexts, starting from an encrypted zero."""
+    total = paillier_encrypt(0, pub)
+    for c in ciphertexts:
+        total = paillier_add(total, c, pub)
+    return total
+
+
+def pack_counter(option, base=10 ** 6):
+    """Encrypt pack_counter(option) instead of option, with base > voters."""
+    return base ** int(option)
+
+
+def unpack_counters(total, options, base=10 ** 6):
+    """Read the per-option counts out of one decrypted number."""
+    return {k: (total // (base ** k)) % base for k in options}
+
+
+def elgamal_he_keygen(bits=512):
+    p = getPrime(bits)
+    g = 2
+    x = random.randrange(2, p - 2)
+    return {"p": p, "g": g, "y": pow(g, x, p)}, x
+
+
+def elgamal_he_encrypt(m, pub):
+    p, g, y = pub["p"], pub["g"], pub["y"]
+    r = random.randrange(2, p - 2)
+    return (pow(g, r, p), (m * pow(y, r, p)) % p)
+
+
+def elgamal_he_decrypt(c, pub, secret):
+    p = pub["p"]
+    return (c[1] * pow(c[0], -secret, p)) % p
+
+
+def elgamal_he_multiply(c1, c2, pub):
+    """(a1*a2, b1*b2) -> E(m1 * m2)."""
+    p = pub["p"]
+    return ((c1[0] * c2[0]) % p, (c1[1] * c2[1]) % p)
+
+
+def elgamal_he_power(c, k, pub):
+    """(a^k, b^k) -> E(m^k)."""
+    p = pub["p"]
+    return (pow(c[0], k, p), pow(c[1], k, p))
+
+
+def rsa_he_keygen(bits=512):
+    p = getPrime(bits // 2)
+    q = getPrime(bits // 2)
+    while p == q:
+        q = getPrime(bits // 2)
+    n = p * q
+    phi = (p - 1) * (q - 1)
+    e = 65537
+    while GCD(e, phi) != 1:
+        e += 2
+    return {"n": n, "e": e}, pow(e, -1, phi)
+
+
+def rsa_he_encrypt(m, pub):
+    return pow(m, pub["e"], pub["n"])
+
+
+def rsa_he_decrypt(c, pub, secret):
+    return pow(c, secret, pub["n"])
+
+
+def rsa_he_multiply(c1, c2, pub):
+    """E(a) * E(b) -> E(a * b)."""
+    return (c1 * c2) % pub["n"]
+
+
+def paillier_compare(c, threshold, pub, secret):
+    """Returns +1 if m > threshold, 0 if equal, -1 if less. One bit leaks."""
+    difference = paillier_decrypt(paillier_add_plain(c, -threshold, pub), pub, secret)
+    return (difference > 0) - (difference < 0)
+
+
+# ==========================================================================
+### FROM c15 : SEARCHABLE ENCRYPTION (Lab 8)
+# ==========================================================================
+
+def se_encrypt(key, data):
+    """AES-CBC with a fresh IV. Returns (iv, ciphertext)."""
+    iv = get_random_bytes(16)
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    return iv, cipher.encrypt(pad(data.encode(), 16))
+
+
+def se_decrypt(key, iv, ciphertext):
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    return unpad(cipher.decrypt(ciphertext), 16).decode(errors="replace")
+
+
+def sse_token(key, label):
+    """Keyed, deterministic trapdoor. Reveals nothing about the label."""
+    return hmac.new(key, str(label).lower().encode(), hashlib.sha256).hexdigest()
+
+
+def pkse_token(label):
+    """Unkeyed, deterministic, PUBLIC - anybody can add to the index."""
+    return hashlib.sha256(str(label).lower().encode()).hexdigest()
+
+
+def sse_index_add(index, key, label, record_id):
+    iv, encrypted = se_encrypt(key, record_id)
+    index.setdefault(sse_token(key, label), []).append([iv.hex(), encrypted.hex()])
+    return index
+
+
+def sse_index_lookup(index, key, label):
+    hits = []
+    for iv_hex, ct_hex in index.get(sse_token(key, label), []):
+        hits.append(se_decrypt(key, bytes.fromhex(iv_hex), bytes.fromhex(ct_hex)))
+    return sorted(set(hits))
+
+
+def sse_build_index(documents, key):
+    """documents = {id: text}. Indexes every distinct word of every document."""
+    index = {}
+    for record_id, text in documents.items():
+        for word in set(str(text).lower().split()):
+            sse_index_add(index, key, word, record_id)
+    return index
+
+
+def pkse_keygen(bits=512):
+    p = getPrime(bits // 2)
+    q = getPrime(bits // 2)
+    while p == q:
+        q = getPrime(bits // 2)
+    n = p * q
+    return {"n": n, "nn": n * n}, (p - 1) * (q - 1)
+
+
+def pkse_encrypt_number(m, pub):
+    n, nn = pub["n"], pub["nn"]
+    r = random.randrange(1, n)
+    while GCD(r, n) != 1:
+        r = random.randrange(1, n)
+    return ((1 + m * n) * pow(r, n, nn)) % nn
+
+
+def pkse_decrypt_number(c, pub, secret):
+    n, nn = pub["n"], pub["nn"]
+    u = (pow(c, secret, nn) - 1) // n
+    return (u * pow(secret, -1, n)) % n
+
+
+def pkse_index_add(index, pub, label, number):
+    index.setdefault(pkse_token(label), []).append(str(pkse_encrypt_number(number, pub)))
+    return index
+
+
+def pkse_index_lookup(index, pub, secret, label):
+    return sorted({pkse_decrypt_number(int(blob), pub, secret)
+                   for blob in index.get(pkse_token(label), [])})
+
+
+def tag_label(field, value):
+    """search by constituency / department / branch / category."""
+    return "%s:%s" % (field, value)
+
+
+def minute_label(stamp):
+    """one bucket per minute; stamp is 'YYYY-MM-DD HH:MM:SS'."""
+    return "time:" + str(stamp)[:16]
+
+
+def minute_labels_between(start, end):
+    """Expand 'from .. to' into the list of minute buckets to look up."""
+    t0 = datetime.strptime(str(start)[:16], "%Y-%m-%d %H:%M")
+    t1 = datetime.strptime(str(end)[:16], "%Y-%m-%d %H:%M")
+    labels = []
+    while t0 <= t1:
+        labels.append(minute_label(t0.strftime("%Y-%m-%d %H:%M")))
+        t0 += timedelta(minutes=1)
+    return labels
+
+
+def number_label(value, bucket=100):
+    """search by amount / score range."""
+    return "num:%d" % (int(value) // bucket)
+
+
+def number_labels_between(low, high, bucket=100):
+    return ["num:%d" % b for b in range(int(low) // bucket, int(high) // bucket + 1)]
+
+
+def prefix_labels(word, minimum=3):
+    """Index these as well to support 'encr*' style prefix search."""
+    word = word.lower()
+    return ["pre:" + word[:size] for size in range(minimum, len(word))]
+
+
+def search_and(lookup, *labels):
+    sets = [set(lookup(label)) for label in labels]
+    return sorted(set.intersection(*sets)) if sets else []
+
+
+def search_or(lookup, *labels):
+    found = set()
+    for label in labels:
+        found |= set(lookup(label))
+    return sorted(found)
+
+
+def search_not(lookup, label, universe):
+    return sorted(set(universe) - set(lookup(label)))
+
+
+def pad_posting_lists(index, key, filler="dummy"):
+    """Defence against the count attack: every list the same length."""
+    longest = max((len(v) for v in index.values()), default=0)
+    padded = {}
+    for token, entries in index.items():
+        extra = []
+        for _ in range(longest - len(entries)):
+            iv, ct = se_encrypt(key, filler)
+            extra.append([iv.hex(), ct.hex()])
+        padded[token] = entries + extra
+    return padded
+
+
+# ==========================================================================
+### FROM c16 : THRESHOLD DECRYPTION AND SECRET SHARING
+# ==========================================================================
+
+def shamir_prime_for(secret, margin=16):
+    """The field has to be larger than the secret being split."""
+    return getPrime(int(secret).bit_length() + margin)
+
+
+def shamir_split(secret, t, n, prime):
+    """f(x) = secret + a1*x + ... + a(t-1)*x^(t-1) mod prime; share i = (i, f(i))."""
+    coeffs = [secret] + [random.randrange(1, prime) for _ in range(t - 1)]
+    return [[i, sum(c * pow(i, j, prime) for j, c in enumerate(coeffs)) % prime]
+            for i in range(1, n + 1)]
+
+
+def shamir_combine(shares, prime):
+    """Lagrange interpolation evaluated at x = 0."""
+    total = 0
+    for xi, yi in shares:
+        num, den = 1, 1
+        for xj, _ in shares:
+            if xi != xj:
+                num = (num * -xj) % prime
+                den = (den * (xi - xj)) % prime
+        total = (total + yi * num * pow(den, -1, prime)) % prime
+    return total
+
+
+def additive_split(secret, k):
+    """s = s1 + ... + sk exactly, as integers. All k shares are required."""
+    shares = [random.randrange(1, secret) for _ in range(k - 1)]
+    shares.append(secret - sum(shares))
+    return shares
+
+
+def additive_combine(shares):
+    return sum(shares)
+
+
+def threshold_setup(secret, t, n):
+    """Returns (prime, shares). Hand one share to each authority."""
+    prime = shamir_prime_for(secret)
+    return prime, shamir_split(secret, t, n, prime)
+
+
+def threshold_recover(shares, prime):
+    """Give it any t shares; fewer than t returns a useless number."""
+    return shamir_combine(shares, prime)
+
+
+def partial_decrypt(c, share_exponent, nn):
+    """Additive sharing only: each authority raises the ciphertext to its share."""
+    return pow(c, share_exponent, nn)
+
+
+def combine_partials(partials, nn):
+    """The product of the partials equals c^(sum of shares) = c^secret."""
+    total = 1
+    for value in partials:
+        total = (total * value) % nn
+    return total
+
+
+# ==========================================================================
+### FROM c17 : TEXT AND DATA UTILITIES
+# ==========================================================================
+
+def to_upper(text):
+    """'Hello World' -> 'HELLO WORLD'"""
+    return str(text).upper()
+
+
+def to_lower(text):
+    """'Hello World' -> 'hello world'"""
+    return str(text).lower()
+
+
+def to_title(text):
+    """'hello world' -> 'Hello World'"""
+    return str(text).title()
+
+
+def swap_case(text):
+    """'Hello' -> 'hELLO'"""
+    return str(text).swapcase()
+
+
+def capitalise_first(text):
+    """'hello world' -> 'Hello world'"""
+    return str(text).capitalize()
+
+
+def remove_numbers(text):
+    """'ab12cd34' -> 'abcd'   (drop every digit)"""
+    return "".join(c for c in str(text) if not c.isdigit())
+
+
+def keep_numbers(text):
+    """'ab12cd34' -> '1234'   (keep only the digits)"""
+    return "".join(c for c in str(text) if c.isdigit())
+
+
+def remove_letters(text):
+    """'ab12cd34' -> '1234'"""
+    return "".join(c for c in str(text) if not c.isalpha())
+
+
+def keep_letters(text):
+    """'He said: hi! 42' -> 'Hesaidhi'"""
+    return "".join(c for c in str(text) if c.isalpha())
+
+
+def remove_spaces(text):
+    """'the house is sold' -> 'thehouseissold'"""
+    return str(text).replace(" ", "")
+
+
+def remove_whitespace(text):
+    """Also removes tabs and newlines."""
+    return "".join(str(text).split())
+
+
+def remove_punctuation(text):
+    """'Hi, there! (ok)' -> 'Hi there ok'  -> drops punctuation only"""
+    return "".join(c for c in str(text) if c not in string.punctuation)
+
+
+def keep_alphanumeric(text):
+    """'a-b_c 1!' -> 'abc1'"""
+    return "".join(c for c in str(text) if c.isalnum())
+
+
+def remove_characters(text, unwanted):
+    """remove_characters('hello world', 'lo') -> 'he wrd'"""
+    return "".join(c for c in str(text) if c not in unwanted)
+
+
+def keep_characters(text, wanted):
+    """keep_characters('hello world', 'lo') -> 'llool'"""
+    return "".join(c for c in str(text) if c in wanted)
+
+
+def remove_vowels(text):
+    return "".join(c for c in str(text) if c not in "aeiouAEIOU")
+
+
+def remove_duplicates(text):
+    """'programming' -> 'progamin'  (keeps the first occurrence, in order)"""
+    seen, out = set(), []
+    for c in str(text):
+        if c not in seen:
+            seen.add(c)
+            out.append(c)
+    return "".join(out)
+
+
+def remove_non_ascii(text):
+    return "".join(c for c in str(text) if ord(c) < 128)
+
+
+def squeeze_spaces(text):
+    """'a    b   c' -> 'a b c'"""
+    return re.sub(r"\s+", " ", str(text)).strip()
+
+
+def clean_for_cipher(text, keep_spaces=False):
+    """Uppercase letters only - the standard input for Lab 1 ciphers.
+
+    'The house is being sold tonight!' -> 'THEHOUSEISBEINGSOLDTONIGHT'
+    """
+    text = str(text).upper()
+    allowed = string.ascii_uppercase + (" " if keep_spaces else "")
+    return "".join(c for c in text if c in allowed)
+
+
+def clean_for_playfair(text):
+    """Playfair merges I and J and works on a 5x5 grid."""
+    return clean_for_cipher(text).replace("J", "I")
+
+
+def pad_to_multiple(text, size, filler="X"):
+    """Hill and transposition need a length that divides evenly."""
+    text = str(text)
+    if len(text) % size:
+        text += filler * (size - len(text) % size)
+    return text
+
+
+def split_blocks(data, size):
+    """'ABCDEFGH', 3 -> ['ABC', 'DEF', 'GH']   works on str and bytes"""
+    return [data[i:i + size] for i in range(0, len(data), size)]
+
+
+def split_pairs(text, filler="X"):
+    """Playfair digraphs: 'BALLOON' -> ['BA', 'LX', 'LO', 'ON']"""
+    text = clean_for_playfair(text)
+    pairs = []
+    i = 0
+    while i < len(text):
+        a = text[i]
+        b = text[i + 1] if i + 1 < len(text) else filler
+        if a == b:
+            b = filler
+            i += 1
+        else:
+            i += 2
+        pairs.append(a + b)
+    return pairs
+
+
+def letter_to_number(ch):
+    """'A' -> 0 ... 'Z' -> 25"""
+    return ord(str(ch).upper()) - 65
+
+
+def number_to_letter(n):
+    """0 -> 'A' ... 25 -> 'Z', wrapping round"""
+    return chr(int(n) % 26 + 65)
+
+
+def text_to_numbers(text):
+    """'ABC' -> [0, 1, 2]"""
+    return [letter_to_number(c) for c in clean_for_cipher(text)]
+
+
+def numbers_to_text(numbers):
+    """[0, 1, 2] -> 'ABC'"""
+    return "".join(number_to_letter(n) for n in numbers)
+
+
+def shift_letter(ch, amount):
+    """Caesar on one character, leaving anything else alone."""
+    if not str(ch).isalpha():
+        return ch
+    base = 65 if ch.isupper() else 97
+    return chr((ord(ch) - base + amount) % 26 + base)
+
+
+def letter_frequency(text):
+    """{'E': 12, 'T': 9, ...} sorted most common first - for frequency attacks."""
+    counts = {}
+    for c in clean_for_cipher(text):
+        counts[c] = counts.get(c, 0) + 1
+    return dict(sorted(counts.items(), key=lambda kv: -kv[1]))
+
+
+def to_bytes(value, encoding="utf-8"):
+    """str / int / list of ints / bytes -> bytes"""
+    if isinstance(value, bytes):
+        return value
+    if isinstance(value, bytearray):
+        return bytes(value)
+    if isinstance(value, int):
+        return value.to_bytes(max(1, (value.bit_length() + 7) // 8), "big")
+    if isinstance(value, (list, tuple)):
+        return bytes(value)
+    return str(value).encode(encoding)
+
+
+def to_hex(value, group=0, upper=True):
+    """to_hex(b'\\xa1\\xb2') -> 'A1B2' ; group=2 -> 'A1 B2'"""
+    raw = to_bytes(value).hex()
+    if upper:
+        raw = raw.upper()
+    if group:
+        return " ".join(raw[i:i + group * 2] for i in range(0, len(raw), group * 2))
+    return raw
+
+
+def from_hex(text):
+    """'a1 b2' or '0xa1 0xb2' or 'a1b2' -> b'\\xa1\\xb2'"""
+    text = str(text).lower().replace("0x", "").replace(",", " ")
+    text = "".join(text.split())
+    return bytes.fromhex(text)
+
+
+def manual_hex_format(data):
+    """The format the lab manual prints signatures in: '0xc8 0x93 ...'"""
+    return " ".join("0x%02x" % b for b in to_bytes(data))
+
+
+def to_base64(value):
+    return base64.b64encode(to_bytes(value)).decode()
+
+
+def from_base64(text):
+    return base64.b64decode(text)
+
+
+def to_int(value):
+    """bytes or str -> one big integer, for RSA / ElGamal / Rabin."""
+    return int.from_bytes(to_bytes(value), "big")
+
+
+def from_int(number, size=None):
+    size = size or max(1, (int(number).bit_length() + 7) // 8)
+    return int(number).to_bytes(size, "big")
+
+
+def flip_one_bit(data, position=0):
+    """Tamper with a record so an integrity check can be demonstrated."""
+    raw = bytearray(to_bytes(data))
+    raw[position % len(raw)] ^= 0x01
+    return bytes(raw)
+
+
+def is_number(text):
+    """Safe input check: is_number('12') -> True, is_number('1a') -> False"""
+    try:
+        float(text)
+        return True
+    except (TypeError, ValueError):
+        return False
+
+
+def ask_int(prompt, default=0):
+    """An input() that does not crash the menu on bad typing."""
+    answer = input(prompt).strip()
+    return int(answer) if answer.lstrip("-").isdigit() else default
+
+
+def digits_of(text):
+    """'B001' -> 1 ; useful when a record id must become a number."""
+    found = keep_numbers(text)
+    return int(found) if found else 0
+
+
+def table(rows, headers=None):
+    """Print a list of tuples as aligned columns."""
+    rows = [tuple(str(c) for c in row) for row in rows]
+    if headers:
+        rows = [tuple(headers)] + rows
+    if not rows:
+        return
+    widths = [max(len(row[i]) for row in rows) for i in range(len(rows[0]))]
+    for index, row in enumerate(rows):
+        print("  ".join(cell.ljust(widths[i]) for i, cell in enumerate(row)))
+        if headers and index == 0:
+            print("  ".join("-" * w for w in widths))
+
+
+def timestamp(fmt="%Y-%m-%d %H:%M:%S"):
+    return datetime.now().strftime(fmt)
+
+
+def parse_timestamp(text, fmt="%Y-%m-%d %H:%M:%S"):
+    return datetime.strptime(str(text), fmt)
+
+
+def within_window(stamp, opens, closes):
+    """Deadline check. The strings sort correctly because of the format."""
+    return str(opens) <= str(stamp) <= str(closes)
+
+
+def minutes_between(start, end):
+    """Every 'YYYY-MM-DD HH:MM' from start to end inclusive."""
+    t0 = parse_timestamp(str(start)[:16], "%Y-%m-%d %H:%M")
+    t1 = parse_timestamp(str(end)[:16], "%Y-%m-%d %H:%M")
+    out = []
+    while t0 <= t1:
+        out.append(t0.strftime("%Y-%m-%d %H:%M"))
+        t0 += timedelta(minutes=1)
+    return out
+
+
+def save_json(obj, path):
+    json.dump(obj, open(path, "w"), indent=2, default=str)
+
+
+def load_json(path, default=None):
+    if os.path.exists(path):
+        return json.load(open(path))
+    return {} if default is None else default
+
+
+def remove_files(*paths):
+    """Best effort cleanup; never raises, so a reset menu item cannot crash."""
+    for path in paths:
+        try:
+            if os.path.exists(path):
+                os.remove(path)
+        except OSError:
+            pass
+
+
 if __name__ == "__main__":
     print("Classical  :", affine_encrypt("hello", 15, 20))
     print("DES        :", des_decrypt(des_encrypt("hi", "A1B2C3D4"), "A1B2C3D4"))
@@ -1906,4 +2583,14 @@ if __name__ == "__main__":
     n, (p, q) = rabin_keygen(512)
     print("Rabin      :", rabin_decrypt(rabin_encrypt("hi", n), p, q).decode())
     print("Hash       :", sha256_hex("hi")[:16], "custom:", custom_hash("hi"))
+
+    pub, sec = paillier_keygen(512)
+    print("Paillier   :", paillier_decrypt(paillier_add(
+        paillier_encrypt(15, pub), paillier_encrypt(25, pub), pub), pub, sec))
+    sk = get_random_bytes(16)
+    idx = sse_build_index({"d1": "secure encrypted data", "d2": "secure search"}, sk)
+    print("SSE search :", sse_index_lookup(idx, sk, "secure"))
+    pr, sh = threshold_setup(sec, 2, 3)
+    print("Threshold  :", threshold_recover(sh[:2], pr) == sec)
+    print("Text utils :", clean_for_cipher("The house, is sold 24!"))
     print("Toolkit loaded OK")

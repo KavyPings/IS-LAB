@@ -1,0 +1,177 @@
+================================================================================
+END-SEM SAMPLE QUESTION ANSWER : "SECURE ELECTRONIC VOTING SYSTEM"
+ICT 3141 Information Security Lab - 20 marks, 90 minutes
+================================================================================
+
+THE QUESTION, IN ONE LINE
+  A menu-driven Python program for remote voting that gives privacy,
+  verifiability, integrity and non-repudiation, and can tally votes without
+  decrypting any single ballot.
+
+THE MARKING TABLE (this is what to build first)
+  Component       What has to be demonstrated
+  -------------   -----------------------------------------------------------
+  Client-Server   ballot built on the client, processed on the server
+  ED              encryption and decryption (AES-256-CBC + RSA-4096 key wrap)
+  DSS             digital signature: ElGamal sign and verify
+  Hash            SHA-512 and integrity verification
+  Search          searchable index by constituency or time range
+
+  Writeup 5 marks, Execution 15 marks.
+  "If the Python code is not menu-driven, the total marks are HALVED."
+  So the menu is the first thing to get working, before anything clever.
+
+--------------------------------------------------------------------------------
+THE FLOW - LEARN THIS ORDER, THE MARKS ARE IN THE ORDER
+--------------------------------------------------------------------------------
+VOTER (client side)
+  1 fill the ballot            "CandidateID=1;ConstituencyID=101"
+  2 SHA-512 of the ballot      integrity
+  3 AES-256-CBC encrypt it     confidentiality, fresh random IV
+  4 wrap the AES key with the Election Commission RSA public key
+  5 ElGamal-sign the SHA-512 hash     authenticity + non-repudiation
+  6 Paillier-encrypt the candidate id so it can be tallied while encrypted
+  7 attach a trusted timestamp
+  8 store the envelope and index the searchable metadata
+
+ELECTION SERVER (server side)
+  1 unwrap the AES session key with its RSA PRIVATE key
+    - and leave the Paillier vote value alone, still encrypted
+  2 AES-decrypt the ballot
+  3 verify the ElGamal signature with the voter public key
+  4 recompute SHA-512 and compare with the stored hash
+  5 check the timestamp against the voting period
+  6 accept or reject
+  7 answer searches by constituency or time range without touching content
+
+TALLY AUTHORITY
+  1 multiply the Paillier ciphertexts -> an encrypted total
+  2 threshold decryption: 2 of 3 Shamir shares of the Paillier private
+    exponent are needed, so no single authority can see the result
+  3 publish only the aggregate counts
+
+--------------------------------------------------------------------------------
+WHY EACH PRIMITIVE IS THERE (the write-up answers)
+--------------------------------------------------------------------------------
+  AES-256-CBC     bulk encryption of the ballot. Symmetric, so it is fast; CBC
+                  with a fresh random IV means two identical ballots give
+                  different ciphertexts.
+  RSA-4096 wrap   solves key distribution: the voter does not share a secret
+                  with the commission, it just encrypts the one-time AES key
+                  to the commission's public key. This is hybrid encryption.
+  SHA-512         any change to the ballot changes the digest, so tampering is
+                  detectable. 512 bits because the question asks for it.
+  ElGamal signing only the voter's private key could have produced (r, s), so
+                  the voter cannot later deny the vote. The hash is signed, not
+                  the ballot, because the signature operation has a size limit.
+  Paillier        the only scheme in the syllabus where multiplying the
+                  ciphertexts ADDS the plaintexts, which is exactly what a
+                  tally is. The server never decrypts a ballot.
+  timestamp       proves the vote was cast before the deadline.
+  SSE index       the server can find "all ballots from constituency 101"
+                  without ever seeing the constituency number in the clear,
+                  because the index key is HMAC(key, "const:101").
+  Shamir t-of-n   "no single authority can view votes independently" is a
+                  requirement in the question; a split private exponent is how
+                  you implement it.
+  RBAC            voter / server / tally / auditor, checked before every
+                  operation, with denials written to the audit log.
+
+--------------------------------------------------------------------------------
+HOW TO RUN IT IN THE EXAM
+--------------------------------------------------------------------------------
+  python evoting.py demo       the full walkthrough with no typing - run this
+                               first, it prints every output the question lists
+  python evoting.py            the interactive menu - this is what gets marked
+  python evoting.py netdemo    a real TCP client and server in one process
+  python evoting.py server     terminal 1: the server listens on 127.0.0.1:9099
+  python evoting.py client     terminal 2: the client submits over TCP
+  python evoting.py reset      delete ballots.json, keys.json, index.json,
+                               the PEM files and the audit log
+
+  The menu matches the sample paper:
+      MAIN MENU: 1 Voter | 2 Election Server | 3 Tally Authority | 4 Auditor | 5 Exit
+      VOTER  MENU: 1 Cast vote | 2 View my ballots | 3 Back
+      SERVER MENU: 1 Verify ballot | 2 Search index | 3 All ballots
+                   | 4 Tamper test | 5 Back
+      TALLY  MENU: 1 Aggregate | 2 Threshold decrypt | 3 One share alone | 4 Back
+
+  Cast B001 with candidate 1 and constituency 101 and the SHA-512 printed
+  matches the one in the sample paper exactly, which is a good sanity check
+  that the ballot string is being built the way the question means it.
+
+--------------------------------------------------------------------------------
+THE SETTINGS BLOCK - CHANGE THESE, NOT THE CODE
+--------------------------------------------------------------------------------
+  system_name     the name printed on the menu
+  record_word     "ballot" -> "report", "transaction", "record"
+  roles           the role table; every operation checks it
+  aes_bits        128 / 192 / 256
+  rsa_bits        2048 by default because RSA-4096 keygen takes a few seconds.
+                  Set it to 4096 if the examiner asks; the key is cached in
+                  ec_private.pem so only the first run is slow.
+  elgamal_bits    size of the ElGamal prime p
+  paillier_bits   size of the Paillier modulus n
+  threshold_t/n   2 of 3 by default
+  voting_opens / voting_closes   the deadline window; set voting_closes into
+                  the past to demonstrate a rejected late vote
+  candidates      the candidate id -> name table used by the tally
+
+--------------------------------------------------------------------------------
+IF THE QUESTION IS DIFFERENT (it will be)
+--------------------------------------------------------------------------------
+  "AES-128 / DES / 3DES"            change aes_bits, or swap the cipher class
+  "RSA signature instead of ElGamal" replace sign_hash / verify_hash with
+                                     pkcs1_15; everything else is untouched
+  "ECDSA / DSA / Schnorr"           same, one function pair
+  "SHA-256 instead of SHA-512"      one line in hash_data
+  "multiply instead of total"       Paillier cannot multiply - use ElGamal or
+                                    textbook RSA (Concepts/c14)
+  "no threshold"                    call paillier_decrypt directly
+  "search by department / amount"   index another label; see Concepts/c15
+  trade reports, medical records, bank transactions, document archives
+                                    rename record_word, roles and the fields
+
+  FASTEST ROUTE: do not retype any of this. Run the wizard - from the top of
+  the IS Lab folder:
+      cd "C:\Users\kavyk\OneDrive\Desktop\Projects\IS Lab"
+      python wizard.py
+  answer the questions, and it writes the whole program for the exact
+  combination the question asks for.
+
+--------------------------------------------------------------------------------
+WHAT TO SAY IF ASKED IN THE VIVA
+--------------------------------------------------------------------------------
+  "Why hash before signing?"       the signature operation has a fixed input
+                                   size, and raw RSA signatures are malleable.
+  "Why not sign the ciphertext?"   the question says sign the SHA-512 hash of
+                                   the ballot. If it had said sign the
+                                   encrypted record, hash the ciphertext first.
+  "Why is the vote encrypted twice?"  AES protects the ballot text; Paillier
+                                   protects the numeric vote in a form that is
+                                   still addable. They are different jobs.
+  "What does the server learn?"    how many ballots exist, which constituency
+                                   token was queried, and when votes arrived -
+                                   never a vote. Say the leakage out loud; it
+                                   is a mark, not a weakness in the answer.
+  "Why Paillier and not RSA?"      RSA multiplies. A tally needs addition.
+  "What if one authority is corrupt?"  with 2-of-3 it needs a second
+                                   authority; one share alone reconstructs a
+                                   uniformly random number. The menu item
+                                   "One share alone" demonstrates this.
+  "Is this a real voting system?"  no. It has no coercion resistance, no
+                                   voter anonymity from the server (the
+                                   envelope carries the voter name), and no
+                                   verifiable shuffle. Saying this is a plus.
+
+--------------------------------------------------------------------------------
+THE FIVE-MINUTE CHECKLIST BEFORE SUBMITTING
+--------------------------------------------------------------------------------
+  [ ] the program is MENU driven (half the marks depend on it)
+  [ ] every menu item has been run once and printed something
+  [ ] the tamper test was shown: hash mismatch and a rejected ballot
+  [ ] the search was shown for both constituency and time range
+  [ ] the tally was shown, and the fact that no ballot was decrypted
+  [ ] an ACCESS DENIED line was shown for a role doing the wrong thing
+  [ ] the audit log was printed
+  [ ] python evoting.py reset works, so the demo can be rerun cleanly

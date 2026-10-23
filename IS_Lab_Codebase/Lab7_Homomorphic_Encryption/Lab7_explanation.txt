@@ -1,0 +1,174 @@
+================================================================================
+LAB 7 - PARTIAL HOMOMORPHIC ENCRYPTION : WHAT IS USED AND WHY
+================================================================================
+
+LIBRARIES USED
+  Crypto.Util.number : getPrime, GCD  (prime generation and gcd)
+  random             : the blinding factor r and the private exponents
+  hashlib            : SHA-256 in the scenario answer
+  time               : perf_counter for the benchmark
+
+  Nothing else. The manual mentions the "phe" package and NumPy; neither is
+  needed, and writing Paillier yourself is what the exercise asks for.
+  If "phe" happens to be installed, phe.paillier.generate_paillier_keypair()
+  does the same job in one line - but do not depend on it in the exam.
+
+--------------------------------------------------------------------------------
+THE ONE IDEA
+--------------------------------------------------------------------------------
+Homomorphic encryption lets a server compute on data it cannot read.
+
+  PARTIAL (PHE)  : one operation only - either addition or multiplication
+  FULL    (FHE)  : both, at a very large cost. Not in this syllabus.
+
+  scheme     multiply the ciphertexts and you get ...   randomised?
+  --------   ----------------------------------------   -----------
+  Paillier   the SUM of the plaintexts                  yes
+  ElGamal    the PRODUCT of the plaintexts              yes
+  RSA        the PRODUCT of the plaintexts              NO (deterministic)
+
+  Pick Paillier whenever the question says total, tally, sum, count, average,
+  aggregate or "without revealing individual values".
+  Pick ElGamal or RSA when the question says product or multiply.
+
+--------------------------------------------------------------------------------
+PAILLIER - THE FORMULAS TO WRITE DOWN
+--------------------------------------------------------------------------------
+  KEYGEN    p, q distinct primes        n = p*q        g = n + 1
+            lambda = (p-1)(q-1)         mu = lambda^-1 mod n
+  ENCRYPT   pick r with gcd(r, n) = 1
+            c = g^m * r^n mod n^2   and because g = n+1 this is simply
+            c = (1 + m*n) * r^n mod n^2
+  DECRYPT   L(x) = (x - 1) / n
+            m = L(c^lambda mod n^2) * mu   mod n
+  ADD       E(m1) * E(m2) mod n^2        -> E(m1 + m2)
+  ADD A PLAIN NUMBER        E(m) * g^k    -> E(m + k)
+  MULTIPLY BY A PLAIN NUMBER E(m)^k       -> E(m * k)
+
+  Note the ciphertext lives mod n^2, so it is TWICE the size of n. That is
+  the price of additive homomorphism.
+
+  NEGATIVE NUMBERS: encrypt (-k mod n). On decryption, anything larger than
+  n/2 is really a negative number, so subtract n. q5.py does this, and it is
+  how you implement subtraction and therefore comparison.
+
+--------------------------------------------------------------------------------
+ELGAMAL - THE FORMULAS
+--------------------------------------------------------------------------------
+  KEYGEN    p prime, g generator, x private, y = g^x mod p
+  ENCRYPT   r random;  (a, b) = (g^r mod p,  m * y^r mod p)
+  DECRYPT   m = b * a^-x mod p
+  MULTIPLY  (a1*a2, b1*b2) -> E(m1 * m2)
+  POWER     (a^k, b^k)     -> E(m^k)
+
+  ElGamal CANNOT add. Any question asking for an encrypted sum needs Paillier.
+
+--------------------------------------------------------------------------------
+RSA (TEXTBOOK) - THE FORMULAS
+--------------------------------------------------------------------------------
+  c = m^e mod n      m = c^d mod n      E(m1)*E(m2) = E(m1*m2)
+
+  Only works WITHOUT padding. PKCS1_OAEP destroys the property on purpose,
+  because the property is also an attack: given E(m) anyone can make E(2m).
+
+--------------------------------------------------------------------------------
+THE PACKED-COUNTER TRICK (worth remembering for vote tallies)
+--------------------------------------------------------------------------------
+Adding candidate IDs gives a meaningless number. To get a count PER option,
+encrypt BASE^option instead of option, with BASE larger than the maximum
+number of voters:
+
+      vote for option 2, BASE = 10^6   ->  encrypt(10^12)
+
+After summing, decrypt once and read the counters off in base BASE:
+
+      count for option k = (total // BASE**k) % BASE
+
+One Paillier ciphertext then carries one counter per option. Both the e-voting
+sample answer and sample_questions/q1.py use this.
+
+--------------------------------------------------------------------------------
+THRESHOLD DECRYPTION
+--------------------------------------------------------------------------------
+"No single authority may see the result" means the private exponent must not
+exist in one place. Split it with Shamir secret sharing over a prime field
+larger than the secret:
+
+      f(x) = secret + a1*x + ... + a(t-1)*x^(t-1)   mod P
+      share i = (i, f(i))
+      any t shares -> Lagrange interpolation at x = 0 -> secret
+      fewer than t shares -> a uniformly random value, so nothing leaks
+
+additional_questions/q3.py demonstrates both halves: t-1 authorities get
+garbage, t authorities get the exact total.
+
+--------------------------------------------------------------------------------
+THE FILES
+--------------------------------------------------------------------------------
+exercise_questions/q1.py   Paillier written from scratch. Encrypts 15 and 25,
+                           adds the ciphertexts, decrypts 40. Also shows
+                           add-a-constant and multiply-by-a-constant, and that
+                           encrypting the same number twice gives different
+                           ciphertexts.
+
+exercise_questions/q2.py   Textbook RSA. Encrypts 7 and 3, multiplies the
+                           ciphertexts, decrypts 21. Then shows the two
+                           consequences: determinism, and the forgery
+                           E(m) -> E(2m) without the private key.
+
+additional_questions/q1.py ElGamal multiplicative homomorphism, encrypted
+                           exponentiation, and a demonstration that addition
+                           does not work. Ends with a three-way comparison.
+
+additional_questions/q2.py Secure data sharing. Two hospitals, one regulator.
+                           Per-group totals, a grand total and a weighted cost
+                           figure, all computed by a server holding no key.
+
+additional_questions/q3.py Secure thresholding. Five employees submit encrypted
+                           salaries; 3 of 5 authorities are needed to see the
+                           payroll total. Shows that 2 of 5 learn nothing.
+
+additional_questions/q4.py Benchmark: keygen, encrypt, decrypt and the
+                           homomorphic operation for Paillier, ElGamal and RSA
+                           at the same key size, plus ciphertext sizes.
+
+additional_questions/q5.py The manual's "secure medical diagnosis", done
+                           correctly. Explains why the manual's ElGamal
+                           comparison cannot work, then implements encrypted
+                           subtraction with Paillier so the server computes
+                           bp - 130 blind and only the sign is published.
+
+sample_questions/q1.py     "SecurePoll" scenario: menu driven, roles
+                           (employee / hr / manager), SHA-256 integrity,
+                           Paillier totals with packed per-score counters and
+                           a 2-of-3 threshold reveal.
+                           python q1.py demo  for the no-typing run.
+
+--------------------------------------------------------------------------------
+LIKELY EXAM VARIATIONS AND WHAT TO CHANGE
+--------------------------------------------------------------------------------
+  "total salary / total votes / sum of readings"      Paillier, plain add
+  "count per category"                               Paillier + packed counters
+  "average"                                          Paillier total // count
+  "weighted total"                                   E(m)^k then add
+  "product of two encrypted values"                  ElGamal or textbook RSA
+  "compare two encrypted values"                     Paillier subtraction,
+                                                     publish only the sign
+  "no single authority may decrypt"                  Shamir t-of-n on lambda
+  "two parties share data"                           one key pair, one holder
+  "which scheme is faster"                           q4.py table
+
+--------------------------------------------------------------------------------
+COMMON MISTAKES
+--------------------------------------------------------------------------------
+  * using Paillier and expecting multiplication, or ElGamal and expecting
+    addition. Read the operation the question asks for first.
+  * forgetting gcd(r, n) = 1 in Paillier encryption.
+  * using pow(x, y) instead of pow(x, y, mod) - it will appear to hang.
+  * computing L(x) with / instead of // - you need integer division.
+  * encrypting with PKCS1_OAEP and then wondering why the RSA homomorphism
+    disappeared.
+  * printing a 1024-bit ciphertext in full and filling the screen. Print
+    hex(c)[:30] + "..." instead.
+  * claiming the server "cannot learn anything". It still learns how many
+    records there are and the aggregate. Say that in the write-up.

@@ -1,6 +1,6 @@
 ################################################################################
 #                                                                              #
-#   IS LAB - MASTER KEY FILE                                                   #
+#   IS LAB - MASTER KEY FILE          syllabus: Lab 1 - Lab 8                 #
 #   Which code to reach for, for which kind of question.                       #
 #   Read this file first in the exam.                                          #
 #                                                                              #
@@ -45,26 +45,63 @@ IS_Lab_Codebase/
 |   |-- c12_conversions_and_storage.py   every str/bytes/hex/int conversion,
 |   |                                    padding, JsonStore, timestamps
 |   |-- c13_socket_client_server.py      length-framed TCP client/server
+|   |-- c14_homomorphic_encryption.py    Paillier (ADD), ElGamal and raw RSA
+|   |                                    (MULTIPLY), packed vote counters,
+|   |                                    encrypted comparison          [Lab 7]
+|   |-- c15_searchable_encryption.py     SSE (HMAC token + AES value), PKSE
+|   |                                    (SHA-256 token + Paillier value),
+|   |                                    tag / time / range / prefix labels,
+|   |                                    AND-OR-NOT, padding            [Lab 8]
+|   |-- c16_threshold_secret_sharing.py  Shamir t-of-n, additive k-of-k,
+|   |                                    partial decryptions, threshold
+|   |                                    decryption of a Paillier total
+|   |-- c17_text_and_data_utilities.py   uppercase/lowercase, removing numbers
+|   |                                    / letters / punctuation / characters,
+|   |                                    cleaning text for a cipher, blocks,
+|   |                                    hex / binary / base64 / int, bit
+|   |                                    flipping, timestamps, JSON storage
 |   `-- ALL_CONCEPTS_TOOLKIT.py          ALL OF THE ABOVE IN ONE FILE
 |                                        -> from ALL_CONCEPTS_TOOLKIT import *
 |
-|-- Sample_Question_Answer/
-|   |-- edusecure.py                     THE ANSWER to the sample paper, and
+|-- Sample_Question_Answer/              MID-SEM sample paper
+|   |-- edusecure.py                     THE ANSWER to the mid-sem sample, and
 |   |                                    the BOILERPLATE for any scenario
 |   |                                    question. `python edusecure.py demo`
 |   `-- Sample_Question_explanation.txt  how it works + how to adapt it
+|
+|-- Endsem_Sample_Question_Answer/       END-SEM sample paper
+|   |-- evoting.py                       THE ANSWER to the end-sem sample
+|   |                                    (secure electronic voting system):
+|   |                                    AES-256-CBC, RSA key wrap, SHA-512,
+|   |                                    ElGamal signature, Paillier tally,
+|   |                                    SSE index, 2-of-3 threshold, roles,
+|   |                                    TCP client/server, menu driven.
+|   |                                    `python evoting.py demo`
+|   `-- Endsem_Sample_Question_explanation.txt
+|                                        the flow, the marking table, the
+|                                        viva answers, the checklist
 |
 |-- Lab1_Classical_Ciphers/
 |-- Lab2_Symmetric_DES_AES/
 |-- Lab3_Asymmetric_RSA_ECC_ElGamal/
 |-- Lab4_Advanced_Asymmetric_KeyMgmt/
 |-- Lab5_Hashing/
-`-- Lab6_Digital_Signature/
+|-- Lab6_Digital_Signature/
+|-- Lab7_Homomorphic_Encryption/
+`-- Lab8_Searchable_Encryption/
         each contains:
           sample_questions/      an exam-style scenario for that lab
           exercise_questions/    q1.py, q2.py ... the manual's Lab Exercises
           additional_questions/  q1.py, q2.py ... the manual's Additional Exercises
           LabN_explanation.txt   what is used in each question and why
+
+   ..and one folder up, beside this codebase:
+     START_HERE.md                  read this first, it is the route map
+     wizard.py                      python wizard.py  ->  writes an answer
+     ENDSEM_EXAM_PLAN.md            the end-sem strategy, phase by phase
+     Wizards/Endsem_Wizard/endsheet.py   the Lab 1-8 writer wizard.py calls
+     Wizards/Midsem_Wizard/playsheet.py  the same, for Lab 1-6
+                                         (python wizard.py --midsem)
 
 ================================================================================
 PART 1 - THE 60-SECOND DECISION TABLE
@@ -114,7 +151,36 @@ The question says ...                       -> go to
 "CIA triad"                                  Concepts/c09     Lab6/additional/q1
 "verify a signature over a network"          Concepts/c13     Lab6/exercise/q3
 
+"homomorphic / compute on encrypted data"    Concepts/c14     Lab7/exercise/q1
+"total / tally / sum without decrypting"     Concepts/c14     Lab7/exercise/q1
+"Paillier"                                   Concepts/c14     Lab7/exercise/q1
+"multiply two encrypted numbers"             Concepts/c14     Lab7/exercise/q2
+"RSA multiplicative property"                Concepts/c14     Lab7/exercise/q2
+"ElGamal homomorphic multiplication"         Concepts/c14     Lab7/additional/q1
+"two parties share encrypted data"           Concepts/c14     Lab7/additional/q2
+"no single authority may decrypt"            Concepts/c16     Lab7/additional/q3
+"threshold decryption / secret sharing"      Concepts/c16     Lab7/additional/q3
+"compare performance of PHE schemes"         Concepts/c14     Lab7/additional/q4
+"diagnosis / compare encrypted values"       Concepts/c14     Lab7/additional/q5
+
+"searchable encryption / encrypted index"    Concepts/c15     Lab8/exercise/q1
+"SSE / symmetric searchable"                 Concepts/c15     Lab8/exercise/q1
+"PKSE / public key searchable"               Concepts/c15     Lab8/exercise/q2
+"search by constituency / department"        Concepts/c15     Lab8/sample/q1
+"search by date or time range"               Concepts/c15     Lab8/sample/q1
+"multi keyword / prefix / range search"      Concepts/c15     Lab8/additional/q3
+"leakage / security-efficiency trade-off"    Concepts/c15     Lab8/additional/q3
+"GnuPG / PGP / sign and encrypt a file"      Concepts/c09     Lab8/additional/q1
+"Snort / NIDS / intrusion detection"         --               Lab8/additional/q2
+
+"remove numbers / letters / punctuation"     Concepts/c17
+"uppercase / lowercase / clean the text"     Concepts/c17
+"hex, binary, base64, int conversion"        Concepts/c17 or c12
+"trusted timestamp / before the deadline"    Concepts/c17
+
 "menu driven system with roles"              Sample_Question_Answer/edusecure.py
+"end-sem style scenario, five components"    Endsem_Sample_Question_Answer/evoting.py
+"I want the whole answer written for me"     ../wizard.py  (python wizard.py)
 
 ================================================================================
 PART 2 - HOW TO ANSWER A SCENARIO QUESTION IN 6 STEPS
@@ -165,6 +231,18 @@ PART 3 - THE MARK-SCHEME MAP (from the sample paper)
   Write-up                 5 marks   -> the LabN_explanation.txt files
 Build the encryption first - it carries the most marks and everything else
 depends on it. Then access control, then signatures, then hashing.
+
+AND FROM THE END-SEM SAMPLE PAPER (20 marks: 5 write-up, 15 execution)
+  Client-Server   client builds and submits, server receives and processes
+  ED              encryption / decryption + public-key key wrapping
+  DSS             digital signature: sign and verify
+  Hash            SHA-512 and integrity verification
+  Search          searchable encryption index (by tag or by time range)
+  plus, inside the execution marks: Paillier tallying, threshold decryption,
+  trusted timestamps, role-based menus, secure storage, and a complete run.
+
+  THE PAPER SAYS: "if the Python code is not menu-driven, the total marks
+  obtained will be reduced to its half." Build the menu FIRST.
 
 ================================================================================
 PART 4 - CONCEPT -> FUNCTION QUICK REFERENCE
@@ -273,6 +351,64 @@ SOCKETS
   send_msg(sock, data) / recv_msg(sock) / recv_exact(sock, n)
   run_server() / run_client() / run_server_multipart() / run_client_multipart()
 
+HOMOMORPHIC ENCRYPTION  (c14)        multiply ciphertexts ->
+  paillier_keygen(bits)              ... ADD the plaintexts
+  paillier_encrypt(m, pub) / paillier_decrypt(c, pub, secret)
+  paillier_add(c1, c2, pub)          E(a) * E(b)   -> E(a + b)
+  paillier_add_plain(c, k, pub)      E(a) * g^k    -> E(a + k)
+  paillier_mul_plain(c, k, pub)      E(a)^k        -> E(a * k)
+  paillier_sub(c1, c2, pub)          -> E(a - b), the basis of comparison
+  paillier_sum(list_of_ciphertexts, pub)
+  paillier_compare(c, threshold, pub, secret)  -> +1 / 0 / -1
+  pack_counter(option, base) / unpack_counters(total, options, base)
+                                     one ciphertext, one counter per option
+  elgamal_he_keygen / encrypt / decrypt / multiply / power
+                                     ... MULTIPLY the plaintexts
+  rsa_he_keygen / encrypt / decrypt / multiply
+                                     ... MULTIPLY (textbook RSA, no padding)
+
+SEARCHABLE ENCRYPTION  (c15)
+  se_encrypt(key, data) / se_decrypt(key, iv, ct)    AES-CBC
+  sse_token(key, label)              HMAC-SHA256, DETERMINISTIC  <- index key
+  pkse_token(label)                  SHA-256, public
+  sse_index_add(index, key, label, record_id)
+  sse_index_lookup(index, key, label)
+  sse_build_index(documents, key)
+  pkse_keygen / pkse_encrypt_number / pkse_decrypt_number
+  pkse_index_add / pkse_index_lookup
+  tag_label(field, value)            "const:101"
+  minute_label(stamp) / minute_labels_between(start, end)   time range
+  number_label(v, bucket) / number_labels_between(low, high, bucket)
+  prefix_labels(word)                support 'encr*'
+  search_and / search_or / search_not(lookup, ...)
+  pad_posting_lists(index, key)      defence against the count attack
+
+THRESHOLD AND SECRET SHARING  (c16)
+  shamir_prime_for(secret)
+  shamir_split(secret, t, n, prime) / shamir_combine(shares, prime)
+  threshold_setup(secret, t, n)      -> (prime, shares)
+  threshold_recover(shares, prime)
+  additive_split(secret, k) / additive_combine(shares)
+  partial_decrypt(c, share, nn) / combine_partials(partials, nn)
+
+TEXT AND DATA UTILITIES  (c17)
+  to_upper / to_lower / to_title / swap_case / capitalise_first
+  remove_numbers / keep_numbers / remove_letters / keep_letters
+  remove_spaces / remove_whitespace / squeeze_spaces
+  remove_punctuation / keep_alphanumeric / remove_non_ascii
+  remove_characters(text, unwanted) / keep_characters(text, wanted)
+  remove_vowels / remove_duplicates
+  clean_for_cipher(text)             UPPERCASE LETTERS ONLY  <- Lab 1 input
+  clean_for_playfair(text)           also merges J into I
+  pad_to_multiple(text, size) / split_blocks(data, size) / split_pairs(text)
+  letter_to_number / number_to_letter / text_to_numbers / numbers_to_text
+  shift_letter(ch, amount) / letter_frequency(text)
+  to_bytes / to_hex(value, group) / from_hex / manual_hex_format
+  to_int / from_int / to_base64 / from_base64 / flip_one_bit
+  is_number / ask_int / digits_of / table(rows, headers)
+  timestamp() / parse_timestamp / within_window(stamp, opens, closes)
+  minutes_between(start, end) / save_json / load_json / remove_files
+
 ================================================================================
 PART 5 - THINGS THAT COST MARKS
 ================================================================================
@@ -290,12 +426,39 @@ PART 5 - THINGS THAT COST MARKS
   * signing with the public key         -> the PRIVATE key signs
   * verify() raising instead of returning False -> wrap it in try/except
   * a bare recv(1024) socket loop       -> use the 4-byte length framing
+  * expecting Paillier to multiply      -> it ADDS; use ElGamal/raw RSA
+  * expecting ElGamal to add            -> it MULTIPLIES; use Paillier
+  * forgetting gcd(r, n) = 1 in Paillier encryption
+  * L(x) written with / instead of //   -> needs integer division
+  * pow(x, y) with no modulus           -> looks like a hang
+  * using a RANDOMISED ciphertext as a search index KEY (the manual's bug)
+    -> the index key must be deterministic: HMAC or a plain hash
+  * forgetting .lower() on the indexed word or the query -> no matches
+  * adding candidate IDs and calling it a tally -> use packed counters
+  * claiming a searchable scheme leaks nothing -> it leaks counts and
+    patterns; say so, it is a mark
+  * printing a 1024-bit ciphertext in full -> print hex(c)[:30] + "..."
+  * not making the program menu driven  -> the end-sem paper halves the marks
 
 ================================================================================
 PART 6 - EXAM SETUP CHECKLIST
 ================================================================================
-  1. pip install pycryptodome        (the only non-standard library needed)
-  2. copy Concepts/ALL_CONCEPTS_TOOLKIT.py next to your answer file
-  3. start from Sample_Question_Answer/edusecure.py
-  4. run `python yourfile.py demo` to check the whole flow before the viva
-  5. keep this KEY file and PYTHON_BASICS_CHEATSHEET.txt open in a tab
+  0. cd into the IS Lab folder FIRST - every command below is run from there
+       cd "C:\Users\kavyk\OneDrive\Desktop\Projects\IS Lab"
+  1. python -m venv .venv  and activate it
+       Windows   .venv\Scripts\activate
+       otherwise source .venv/bin/activate
+  2. pip install pycryptodome        (the only non-standard library needed)
+  3. python wizard.py --check
+       must print ENVIRONMENT READY
+       (wizard.py sits in the IS Lab folder and finds the real wizards
+        inside Wizards/ itself, so the long path is never needed)
+  4. decide the route:
+       FASTEST  python wizard.py
+                answer the questions, it writes answer.py for you
+       BY HAND  copy Concepts/ALL_CONCEPTS_TOOLKIT.py next to your answer and
+                start from Endsem_Sample_Question_Answer/evoting.py (end-sem)
+                or Sample_Question_Answer/edusecure.py (mid-sem shape)
+  5. run `python yourfile.py demo` to check the whole flow before the viva
+  6. keep this KEY file, PYTHON_BASICS_CHEATSHEET.txt and
+     ENDSEM_EXAM_PLAN.md open in tabs

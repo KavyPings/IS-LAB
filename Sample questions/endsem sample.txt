@@ -1,0 +1,73 @@
+# Extracted Question and Marking Components
+
+## 1. Full question (transcribed)
+
+Question:
+
+A national e-voting system has been deployed to allow citizens to cast their votes securely from remote locations. The system ensures privacy, verifiability, integrity, and non-repudiation while allowing aggregate computations without revealing individual votes.
+
+### On the client side:
+
+- A voter fills out an electronic ballot that records their candidate selection and constituency ID.
+- Before submission, the voter's device generates a SHA-512 hash of the ballot file to ensure data integrity.
+- The ballot is then encrypted using AES-256 in CBC mode for confidentiality.
+- The AES key is encrypted with the Election Commission's RSA-4096 public key.
+- To ensure authenticity and non-repudiation, the voter digitally signs the SHA-512 hash using their ElGamal digital signature.
+- The voter's choice (numerical candidate ID) is homomorphically encrypted using the Paillier encryption scheme, allowing the Election Commission to tally votes without decrypting individual ballots.
+- A timestamp from a trusted authority is added to record the exact submission time and ensure votes are cast before the deadline.
+
+### On the server side:
+
+- The system decrypts the AES session key using its RSA private key, but keeps the homomorphically encrypted vote values in their encrypted form.
+- It verifies the digital signature using the voter's public key and compares the SHA-512 hash to detect any tampering.
+- The timestamp is checked to confirm the vote was cast within the valid voting period.
+- The homomorphic tallying algorithm is then applied to aggregate the encrypted votes and compute total counts without decrypting any individual vote.
+- For audit and search purposes, the server maintains a searchable encryption index to locate ballots from specific constituencies or time ranges without revealing vote content.
+- At the end of the election, only the final aggregated ciphertext is decrypted using a threshold decryption scheme, ensuring that no single authority can view votes independently.
+
+Task: Write a menu-driven Python program that implements the above functionalities. Ensure that the system supports role-based access control and appropriate use of cryptographic operations for confidentiality, integrity, and authenticity. Use data structures (e.g., databases, files, arrays) to securely store encrypted, signed, and hashed trade reports. Show outputs for all the functions specified in the question.
+
+## 2. Components that will be marked
+
+The table at the bottom of the image identifies these five components:
+
+| Component     | What needs to be demonstrated                                                               |
+| ------------- | ------------------------------------------------------------------------------------------- |
+| Client-Server | Client-side ballot creation and submission, server-side processing, secure exchange of data |
+| ED            | Encryption and Decryption functionality                                                     |
+| DSS           | Digital Signature Scheme — signing and signature verification                               |
+| Hash          | SHA-512 hashing and integrity verification                                                  |
+| Search        | Searchable encryption index for locating ballots by constituency or time range              |
+
+## 3. Marking table extracted from the image
+
+The examiner's table has four columns:
+
+| Component                      | Writeup      | Execution    | Remarks      |
+| ------------------------------ | ------------ | ------------ | ------------ |
+| Client-Server                  | To be filled | To be filled | To be filled |
+| ED (Encryption/Decryption)     | To be filled | To be filled | To be filled |
+| DSS (Digital Signature Scheme) | To be filled | To be filled | To be filled |
+| Hash                           | To be filled | To be filled | To be filled |
+| Search                         | To be filled | To be filled | To be filled |
+
+## 4. What your Python program must implement
+
+To cover the marked components, prioritize these five modules:
+
+1. Client-Server: Client ballot creation, submission, server-side receipt and processing.
+2. ED: AES-256 encryption/decryption and RSA encryption/decryption of the AES session key.
+3. DSS: ElGamal digital signature generation and verification.
+4. Hash: SHA-512 hash generation and integrity verification.
+5. Search: Search ballots using constituency IDs and timestamps without exposing ballot contents.
+
+Also include the additional requirements mentioned in the question:
+
+- Paillier homomorphic encryption and encrypted vote tallying.
+- Trusted timestamps and voting deadline validation.
+- Role-based access control.
+- Threshold decryption of the final aggregated ciphertext.
+- Secure storage of encrypted ballots, hashes and signatures.
+- A menu-driven interface with execution outputs for all functions.
+
+Important: The five rows in the marking table are the explicitly listed assessment components. The remaining requirements are part of the question and should also be addressed.
