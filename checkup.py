@@ -461,7 +461,8 @@ def test_selftests():
 # tidy
 # ---------------------------------------------------------------------------
 
-JUNK = ["_st_keys", "keys", os.path.join("lab answers", "key_management.log")]
+JUNK = ["_st_keys", "_st_lean", "_st.log", "keys",
+        os.path.join("lab answers", "key_management.log")]
 RUN_ARTIFACTS = ["records.json", "ballots.json", "index.json", "numbers.json",
                  "keys.json", "he_key.json", "pkse_key.json", "paillier_key.json",
                  "server_private.pem", "server_public.pem",
@@ -501,6 +502,16 @@ def tidy():
                        capture_output=True, text=True)
 
     for name in RUN_ARTIFACTS:
+        path = os.path.join(ROOT, name)
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+                print("   cleared  %s" % name)
+            except OSError as exc:
+                print("   left     %s  (%s)" % (name, exc))
+
+    for name in ("server_key.json", "kms_keys.json", "key_management.log",
+                 "pkse_numbers.json"):
         path = os.path.join(ROOT, name)
         if os.path.exists(path):
             try:

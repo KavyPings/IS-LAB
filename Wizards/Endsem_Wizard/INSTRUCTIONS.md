@@ -18,7 +18,7 @@ the one library, and proves the folder works.
 
 | file | what it is for |
 | --- | --- |
-| `READING_THE_QUESTION.md` | step 1 in full: the sample paper decoded, sentence by sentence |
+| `READING_THE_QUESTION.md` | step 1 in full: the sample paper decoded sentence by sentence, **and section 7 — every wizard prompt, how to choose it from the question, and what to do when the question is silent** |
 | this file | the five steps, start to finish |
 | `../MANUAL_COVERAGE.md` | the audit of all three lab manuals against the wizard's options |
 
@@ -183,8 +183,11 @@ Forgetting it is the single most common error in the exam:
 
 **`READING_THE_QUESTION.md`, next to this file, is this step in full** — the
 sample paper taken apart sentence by sentence, the three-pass method, the
-marking table read first, and a blank worksheet. Read that one before the
-exam. What follows here is the short version.
+marking table read first, and a blank worksheet. Its **section 7 goes through
+every prompt the wizard asks**: what in the question decides each answer,
+what to do when the question says nothing, and what each switch costs. Read
+that one before the exam and keep it open during. What follows here is the
+short version.
 
 Copy this onto the rough sheet and fill it in. Each line is one wizard answer.
 

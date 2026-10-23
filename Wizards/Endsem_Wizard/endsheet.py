@@ -25,7 +25,9 @@ WHAT TO DO IN THE EXAM, IN ORDER
 
   Two docs sit next to this file:
      READING_THE_QUESTION.md   the sample paper taken apart sentence by
-                               sentence, with the settings each one sets
+                               sentence, and section 7: every prompt below,
+                               how the question decides it, and what to
+                               answer when the question says nothing
      INSTRUCTIONS.md           the same five steps, in full
 
 STEP 0 - SETTING UP FROM NOTHING  (a lab machine, a fresh laptop, a USB copy)

@@ -9,6 +9,12 @@ reporting system, a hospital record system — and the scheme names swapped.
 Your whole job in the first ten minutes is to find which scheme name went
 into each slot. Nothing else in the question needs a decision.
 
+Sections 1–6 decode the sample paper. **Section 7 is the reference you use
+during the exam**: every prompt the wizard asks, what in the question decides
+it, what to do when the question is silent, and what each switch costs in
+lines. Sections 8–11 cover the traps, the gaps, a second worked question and
+a blank worksheet.
+
 ---
 
 ## 1. What an end-sem question is made of
@@ -209,29 +215,470 @@ bullet. Name them after the question's words, never `user1`/`user2`.
 
 ---
 
-## 7. What to type
+## 7. Answering every prompt
 
-This exact configuration is the `evoting` preset, so in the exam it is one
-line:
+If a preset already matches your checklist, it is one line:
 
 ```
 python wizard.py --build evoting
 ```
 
-But **check the preset against your checklist before trusting it** — the
-real paper will differ somewhere. If it does, run the questions instead:
+**Check the preset against your checklist first** — the real paper will
+differ somewhere. When it does, run the questions:
 
 ```
 python wizard.py
 ```
 
-and the prompts come in checklist order: scenario → the four nouns → cipher,
-mode, key wrap, RSA size → hash, signature → homomorphic, threshold, search
-→ access model → key management → hmac / log chain / replay → timestamps,
-sockets, split → roles → output name. Enter accepts the shown default, so
-starting from the nearest preset means you only type the lines that changed.
+The prompts come in checklist order and **Enter accepts the shown default**,
+so starting from the nearest preset means you only type the lines that
+changed. What follows is every prompt, what decides it, and what to do when
+the question says nothing.
 
-Either way you get four files. `answer.py` is the answer.
+The rule that covers nine prompts out of ten:
+
+> **If the question names it, use what it names. If the question is silent,
+> accept the default and say in the write-up that the question did not
+> specify.** Never invent a requirement the paper did not make — a setting
+> you turned on is a setting you have to explain in the viva.
+
+---
+
+### 7.1 `scenario`
+
+Pick the **nearest** preset, never `custom`, unless nothing is close. It
+costs nothing to override a line afterwards and it saves twenty Enters.
+
+| the question is about | nearest preset |
+| --- | --- |
+| votes, ballots, tallying, an election | `evoting` |
+| trades, transactions, reports, totals per client | `trade` |
+| patients, readings, comparing two encrypted values | `medical` |
+| accounts, transfers, a bank | `banking` |
+| documents, files, keyword search | `documents` |
+| hospitals + a key management service | `healthcare` |
+| licences, DRM, access that expires | `drm` |
+| subsystems exchanging keys inside one company | `enterprise` |
+| nothing recognisable | nearest by the **schemes** it names, not the story |
+
+`custom` only if the question is genuinely unlike all nine. `minimal` is for
+the ten-minutes-left emergency, not for a real answer.
+
+---
+
+### 7.2 The four nouns
+
+| prompt | what to put | where you find it |
+| --- | --- | --- |
+| system name | the question's own name, or invent one | the first sentence |
+| what is one stored item called | singular, lowercase: `ballot`, `trade`, `record`, `reading` | the client-side bullets |
+| the field you search on | the thing the search bullet looks things up **by** | the search bullet, usually server side |
+| the numeric field that gets totalled | the one field that gets added, averaged or compared | the homomorphic bullet |
+
+Three mistakes to avoid: a plural (`ballots`), a sentence instead of a word,
+and guessing the tag word from the client side. Where the question has no
+search bullet, the tag word is whatever you would group records by —
+department, branch, constituency.
+
+---
+
+### 7.3 `symmetric cipher`  — AES-128 / AES-192 / AES-256 / DES / 3DES
+
+| the question says | choose | why |
+| --- | --- | --- |
+| "AES-256", "256-bit AES" | `AES-256` | 32-byte key |
+| "AES-128", "AES" with no size | `AES-128` / `AES-256` | if no size is given, AES-256 and say so |
+| "DES" | `DES` | 8-byte key, 8-byte blocks — **say in the viva that 56 effective bits is broken today** |
+| "3DES", "Triple DES", "DES3" | `3DES` | 24-byte key; pycryptodome rejects a degenerate key where K1 = K2, which the generated code handles |
+| nothing | `AES-256` | the modern default |
+
+Block size changes with the cipher (16 bytes for AES, 8 for DES/3DES), and
+the generated code pads to the right one by itself. You never have to adjust
+anything after changing this.
+
+---
+
+### 7.4 `mode of operation` — CBC / ECB / CFB / OFB / CTR / GCM / EAX
+
+Decide in this order:
+
+1. **Does the question name a mode?** Use it. Done.
+2. **Does it say the mode must detect tampering / provide authenticated
+   encryption / produce a tag?** → `GCM` (or `EAX`).
+3. **Does it say identical plaintexts must look different, or mention an
+   IV / nonce?** → any of `CBC`, `CFB`, `OFB`, `CTR` — keep `CBC`.
+4. **Silent?** → `CBC`.
+
+| mode | pick it when | watch for |
+| --- | --- | --- |
+| `CBC` | the default; "with an IV" | needs padding — the `Padding is incorrect` error means a wrong key |
+| `ECB` | the question explicitly says ECB, or asks you to *show why ECB is weak* | say out loud that identical blocks encrypt identically; never defend it |
+| `CFB` / `OFB` | named; "turns the block cipher into a stream cipher" | no padding needed |
+| `CTR` | named; "counter mode", "parallelisable" | no padding; never reuse a nonce |
+| `GCM` | "authenticated encryption", "detects modification", "tag" | decryption raises `MAC check failed` on tampering — that is the demo, not a bug |
+| `EAX` | named, or GCM is wanted but the paper says EAX | same as GCM in behaviour |
+
+If the marking table has a **Remarks** column and you have spare time, GCM
+is the single best unprompted upgrade: it demonstrates integrity *inside*
+the cipher, which is a question examiners like asking.
+
+---
+
+### 7.5 `how is the session key sent` — RSA / ECC / ELGAMAL / RABIN / DH / NONE
+
+This is the asymmetric half of ED. Read the bullet that says how the
+symmetric key reaches the other side.
+
+| the question says | choose |
+| --- | --- |
+| "encrypted with the ... RSA public key" | `RSA` |
+| "ECC", "elliptic curve", "secp256r1 / P-256", "ECIES" | `ECC` |
+| "ElGamal", "public key (p, g, h)" | `ELGAMAL` |
+| "Rabin cryptosystem", "Blum primes", "quadratic residue" | `RABIN` |
+| "Diffie-Hellman", "the two sides derive a shared secret" | `DH` |
+| the key is pre-shared / the question never sends a key | `NONE` |
+| nothing | `RSA` |
+
+Three things worth knowing before the viva:
+
+- **`DH` is not key wrapping.** Nothing is encrypted; both sides compute the
+  same secret from their own private value. If the question says *"exchange"*
+  it is probably DH; if it says *"encrypt the key with"* it is RSA/ECC/ElGamal.
+- **`RABIN` decryption produces four roots.** The generated code adds a
+  marker so the right one is identifiable — that is a standard exam question.
+- **`ECC` here means ECIES**: an ephemeral key, a point multiplication, a KDF,
+  then AES-GCM. ECC cannot encrypt a key directly.
+- `ELGAMAL` and `RSA` are also the two that can be made *multiplicatively
+  homomorphic* (see 7.9), so a question that uses one for both is giving you
+  a hint.
+
+---
+
+### 7.6 `RSA key size` (only asked when wrap = RSA)
+
+| the question says | type | but |
+| --- | --- | --- |
+| nothing | `2048` | the default |
+| "RSA-2048" | `2048` | |
+| "RSA-1024" | `1024` | add one line saying 1024 is below current guidance |
+| "RSA-3072 / RSA-4096" | `2048` **first** | keygen at 4096 takes 10–60 s and you may run it twice |
+
+If the paper says 4096: build at 2048, demo everything, then rebuild at 4096
+while you are writing the answer up. Write *"RSA-4096 as specified; the
+screenshots were taken at 2048 for time, only the modulus size differs."*
+That sentence has never cost a mark. A demo that stalls on keygen has.
+
+---
+
+### 7.7 `hash algorithm`
+
+| the question says | choose |
+| --- | --- |
+| "SHA-512 / 384 / 256 / 224" | the one named |
+| "SHA-3" | `sha3_256` |
+| "MD5" or "SHA-1" | the one named — and say in the viva that it is broken (collisions) and is being used only because the question specifies it |
+| "write your own hash function", "multiply by 33", "5381", "a custom hash" | `custom` |
+| nothing | `sha512` |
+
+The Hash row is marked on every paper, so this is never the place to
+improvise. Two points that earn remarks:
+
+- the digest is what gets **signed**, not the plaintext — so a changed record
+  breaks both the hash check and the signature;
+- a hash is keyless, so it proves integrity but not origin. If the question
+  wants keyed integrity, that is the HMAC switch in 7.14, not this prompt.
+
+---
+
+### 7.8 `signature scheme` — ELGAMAL / RSA / DSA / ECDSA / SCHNORR
+
+| the question says | choose |
+| --- | --- |
+| "ElGamal signature" | `ELGAMAL` |
+| "RSA signature", "signs with its private key" (RSA elsewhere) | `RSA` |
+| "DSA", "Digital Signature Algorithm" | `DSA` |
+| "ECDSA", "signs on the curve" | `ECDSA` |
+| "Schnorr" | `SCHNORR` |
+| nothing | `ELGAMAL`, or match whatever the wrap already is |
+
+A signature scheme and a key wrap are **independent choices** — a paper that
+wraps with RSA and signs with ElGamal is normal, and the sample paper does
+exactly that. Do not "tidy" it into one scheme; the examiner put two there
+on purpose.
+
+---
+
+### 7.9 `homomorphic scheme` — PAILLIER / RSA_MUL / ELGAMAL_MUL / NONE
+
+Look for the **verb**, not the scheme name:
+
+| the question's verb | choose | because |
+| --- | --- | --- |
+| add, total, tally, sum, count, aggregate, average | `PAILLIER` | additively homomorphic: E(a)·E(b) = E(a+b) |
+| multiply, product of the encrypted values, scale | `RSA_MUL` or `ELGAMAL_MUL` | multiplicatively homomorphic; pick whichever the question already uses elsewhere |
+| **compare** two encrypted values without decrypting | `PAILLIER` | subtract the ciphertexts, decrypt only the difference, look at the sign |
+| per-option counts, "how many voted for each candidate" | `PAILLIER` | the generated code packs the counters into one number base-BASE |
+| no arithmetic on ciphertext anywhere | `NONE` | saves ~175 lines you would have to explain |
+
+If the question names Paillier **and** says "multiply", trust the scheme
+name and treat "multiply" as the ciphertext multiplication that implements
+addition — that is the usual phrasing trap.
+
+`NONE` switches off the aggregation menu, the threshold prompt and the
+analyst role. Only choose it when nothing in the question touches encrypted
+arithmetic.
+
+---
+
+### 7.10 `threshold decryption of the total`, `shares needed`, `shares handed out`
+
+Asked only when a homomorphic scheme is on.
+
+| the question says | answer |
+| --- | --- |
+| "no single authority can decrypt", "no one party", "requires the cooperation of" | `y` |
+| "t-of-n", "2 of 3", "any three of five trustees" | `y`, then those numbers |
+| "split the key", "shared among the trustees", "Shamir" | `y` |
+| "the election officer decrypts the total" (one named party) | `n` |
+| nothing | `y` — it is 57 lines and it is the kind of thing a Remarks column rewards |
+
+Rules for the two numbers:
+
+- `shares needed` (t) ≤ `shares handed out` (n). The wizard will not stop you
+  writing 4-of-3; the program will.
+- **t = 1** means any single holder can decrypt — that defeats the purpose,
+  so never choose it unless the question does.
+- **t = n** is additive k-of-k: everybody must be present. Choose it only when
+  the question says *all* trustees.
+- Silent → **2-of-3**. It is the smallest setting that actually demonstrates
+  the property: one share is not enough, two are.
+
+In the demo, show the failure before the success: the analyst menu's
+**`3 One share alone`** reconstructs from a single share and prints a value
+that is not the private exponent, and then **`2 Reveal total`** decrypts
+properly with `t` shares. The failure is the proof — the success on its own
+demonstrates nothing a single key would not.
+
+---
+
+### 7.11 `searchable encryption` — SSE / PKSE / NONE
+
+| the question says | choose |
+| --- | --- |
+| "searchable index", "search without revealing the contents", "locate X without decrypting" | `SSE` |
+| "many parties / any hospital / every branch can add to the index", "the index is built with a public key" | `PKSE` |
+| "keyword search over encrypted documents" | `SSE` unless it says who writes the index |
+| no search anywhere **and** no Search row in the marking table | `NONE` |
+
+**The override that matters:** if the marking table has a **Search** row, turn
+search on even when the prose barely mentions it. A marked row left empty is
+the most expensive thing you can do in this exam.
+
+What you get either way: a deterministic token per tag (HMAC-SHA256 for SSE,
+SHA-256 for PKSE), encrypted values, exact-tag search, time-range search over
+one-minute buckets, prefix search, and boolean AND/OR queries. So "search by
+constituency **and** by time range" needs no extra setting.
+
+If asked why the tokens are deterministic while the values are randomised:
+the server must be able to match a token, so tokens leak equality, and the
+number of hits per token leaks how common a tag is. That is the known
+weakness. The worked demonstration of it — the **count attack** and
+posting-list padding as the mitigation — is in
+`IS_Lab_Codebase/Concepts/c15_searchable_encryption.py` and
+`Lab8_Searchable_Encryption/additional_questions/q3.py`, not in the generated
+answer. Read it once; it is the obvious follow-up question.
+
+---
+
+### 7.12 `access control model` — the seven of Lab 4
+
+Every paper mentions access control somewhere. The question is only *which*
+model, and the phrase that decides it is usually five words long.
+
+| choose | the question's giveaway phrase | the one rule that makes it different |
+| --- | --- | --- |
+| `RBAC` | "roles and permissions", "role-based", a list of actors with actions | a role carries a fixed set of permissions |
+| `DAC` | "the **owner** decides who may access", "access matrix", "grant and revoke" | rights are handed over by their holder, and can be taken back |
+| `MAC` | "**clearance**", "classification", "security level", "top secret / confidential" | allowed only if clearance ≥ classification, and the action is in the policy |
+| `BLP` | "**no read up**", "**no write down**", "Bell-LaPadula", "cannot write to a lower level" | the two properties together: read ≤ own level, write ≥ own level |
+| `ABAC` | "**attributes**", "department", "a policy function", "based on the user's properties" | a function of attributes decides, and reports which clause failed |
+| `TIME` | "access **expires**", "a licence valid for 30 days", "temporary access", "only during office hours" | a grant carries an expiry and stops working after it |
+| `PROB` | "**trust score**", "risk level", "probability of granting", "confidence" | a numeric score is compared against a threshold |
+
+Decision shortcuts:
+
+- The question lists actors and what each may do, and nothing more → `RBAC`.
+  That is the common case and the sample paper's case.
+- It names **levels** → `MAC`. It names levels **and** restricts writing →
+  `BLP`.
+- It talks about **who may hand out** a right → `DAC`.
+- It talks about **when** → `TIME`.
+- It talks about properties that are not levels (department, location,
+  device) → `ABAC`.
+- Two models fit? Choose the more specific one and say in the write-up that
+  it generalises the other: BLP is MAC plus the write rule, ABAC subsumes
+  RBAC when the only attribute is a role.
+
+Whichever you choose, the generated demo shows that model's distinctive rule
+failing and then succeeding — DAC grants then revokes, BLP refuses a write
+down, TIME expires a grant. Run it; it is the quickest access-control
+write-up you will get.
+
+---
+
+### 7.13 `key management` (generate / distribute / revoke / renew / rotate, sealed storage)
+
+The biggest single switch: **+184 lines** and a whole extra menu.
+
+| the question says | answer |
+| --- | --- |
+| "generate, distribute, revoke and renew keys" (the Lab 4 lifecycle verbs) | `y` |
+| "a key management service / central authority issues keys" | `y` |
+| "keys are renewed every 12 months", "revoke a subsystem's keys" | `y` |
+| "private keys must be stored securely" | `y` — the sealed PBKDF2 + AES-GCM store is the cheapest way to show it |
+| "a key escrow / audit of key usage" | `y` |
+| the question only encrypts and signs | `n` |
+| nothing | `n` |
+
+If you turn it on, demo the **revoke** and then the **renew**: a revoked
+holder being refused and then restored is the whole point of the lifecycle,
+and the generated demo does exactly that.
+
+---
+
+### 7.14 `HMAC tag`, `hash-chained audit log`, `replay protection`
+
+None of these are in the lab manual. All three default to `n`. They are
+cheap marks when the paper hints at them and pure liability when it does
+not — every switch adds a menu item you must be able to explain.
+
+| prompt | turn it on when the question says | cost |
+| --- | --- | --- |
+| HMAC tag as well as the digest | "keyed integrity", "MAC", "HMAC", "prove it came from the holder of the key" | +30 lines |
+| hash-chain the audit log | "tamper-evident log", "an audit trail that cannot be altered", "append-only", "blockchain-like" | +63 lines |
+| reject replayed and stale submissions | "prevent replay", "reject duplicate submissions", "a nonce", "requests older than N seconds" | +57 lines |
+
+The rule: **off unless hinted.** The one exception is when the marking table
+has a Remarks column and you finish early — then the hash-chained log is the
+most impressive of the three for the least explaining, because you can show
+the chain breaking when a line is edited.
+
+An HMAC and a digital signature are not the same thing, and that is the
+question that follows if you turn HMAC on: HMAC is symmetric, so both sides
+can forge it and it gives integrity without non-repudiation; a signature is
+asymmetric, so only the holder of the private key could have made it.
+
+---
+
+### 7.15 `trusted timestamps and a deadline check`
+
+| the question says | answer |
+| --- | --- |
+| "a timestamp from a trusted authority", "before the deadline", "within the valid period", "office hours", "submitted on time" | `y` |
+| you are searching by **time range** | `y` — the time buckets come from the timestamp |
+| nothing about time at all | `y` anyway |
+
+Default `y`. It costs 13 lines, it makes the records look real, and
+"the submission time is recorded and checked against the deadline" is a
+sentence you can write under almost any component.
+
+---
+
+### 7.16 `real TCP client and server`, and `write them as separate files`
+
+| the question says | answer |
+| --- | --- |
+| "on the client side ... on the server side" | `y` |
+| the marking table has a **Client-Server** row | `y`, always |
+| "the device submits to the server", "sends over the network" | `y` |
+| a single-user tool with no second party | `n` |
+
+Then: **separate files → always `y` when sockets are on.** It is free, it
+does not change `answer.py`, and it gives you `answer_server.py` and
+`answer_client.py` — two short programs with no comments and nothing they do
+not use, which is what you run in two terminals while the examiner watches:
+
+```
+terminal 1:  python answer_server.py
+terminal 2:  python answer_client.py alice B001 1 101
+```
+
+That two-terminal run *is* the Client-Server mark. `netdemo` inside
+`answer.py` does the same thing in one process — use it as the backup if a
+port is blocked, and say that is what you did.
+
+---
+
+### 7.17 `rename the roles`
+
+Answer `y` and use the question's own actors. The prompt asks for a name per
+capability, so map them like this:
+
+| the wizard asks for the role that can | put the question's name for |
+| --- | --- |
+| `submit` | whoever creates a record — voter, trader, clinic, doctor |
+| `verify` | whoever receives and checks it — the server, the commission, the bank |
+| `aggregate` | whoever computes on ciphertext — the tally authority, the analyst |
+| `view_hashes` | whoever inspects without reading — the auditor, the regulator |
+
+`voter / server / tally / auditor` reads like an answer to this question.
+`user1 / user2` reads like a template, and it is the first thing an examiner
+notices.
+
+---
+
+### 7.18 `output file name`
+
+Leave it as `answer`. Everything in the instructions, the troubleshooting
+table and the commands you have memorised says `answer.py`. Renaming it buys
+nothing and costs you the one path you will type fifty times.
+
+---
+
+### 7.19 Everything silent — the safe default build
+
+When the question is vague about everything except the story, this build
+answers all five of the usual marked components and nothing more:
+
+```
+cipher AES-256   mode CBC     wrap RSA 2048   hash sha512
+sign ELGAMAL     he PAILLIER  threshold 2-of-3
+search SSE       access RBAC  timestamps y    sockets y + split
+kms n            hmac n       log_chain n     replay n
+```
+
+That is `python wizard.py --build evoting` with your own four nouns, and it
+is 865 lines.
+
+### What each switch costs
+
+Measured against that build, so you can trade size for marks with your eyes
+open:
+
+| switch | lines |
+| --- | --- |
+| key management on | **+184** |
+| hash-chained log on | +63 |
+| replay protection on | +57 |
+| PKSE instead of SSE | +37 |
+| HMAC tag on | +30 |
+| access TIME / ABAC / DAC / BLP / PROB / MAC instead of RBAC | +58 / +44 / +34 / +25 / +23 / +16 |
+| homomorphic off | **−176** |
+| sockets off | −95 |
+| search off | −71 |
+| threshold off | −57 |
+| timestamps off | −13 |
+| everything optional off (`minimal`) | −362 |
+
+### Before you press Enter on the last prompt
+
+Five seconds, five questions:
+
+1. Does every row of the marking table have a setting that produces it?
+2. Is anything on that the question never asked for?
+3. Are the four nouns the question's own words?
+4. Are the roles the question's own actors?
+5. Is `t` ≤ `n`?
 
 ---
 
