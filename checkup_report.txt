@@ -1,14 +1,14 @@
 ##############################################################################
-# IS LAB CHECKUP      2026-10-23 05:11:20
+# IS LAB CHECKUP      2026-10-23 10:23:36
 ##############################################################################
 
 ==============================================================================
  A. ENVIRONMENT
 ==============================================================================
   python      : 3.12.10
-  executable  : C:\Users\kavyk\AppData\Local\Programs\Python\Python312\python.exe
+  executable  : C:\Users\kavyk\OneDrive\Desktop\Projects\IS Lab\Wizards\Endsem_Wizard\.venv\Scripts\python.exe
   folder      : C:\Users\kavyk\OneDrive\Desktop\Projects\IS Lab
-  in a venv   : False
+  in a venv   : True
 
   pycryptodome: 4.1.0
   backend     : pycryptodome native modules: OK
@@ -40,16 +40,16 @@
 ==============================================================================
  C. THE WIZARDS
 ==============================================================================
-  ok   wizard.py --check                              0.1s
+  ok   wizard.py --check                              0.2s
       $ python wizard.py --check
-      | python     : 3.12.10 - C:\Users\kavyk\AppData\Local\Programs\Python\Python312\python.exe
+      | python     : 3.12.10 - C:\Users\kavyk\OneDrive\Desktop\Projects\IS Lab\Wizards\Endsem_Wizard\.venv\Scripts\python.exe
       | pycryptodome: 4.1.0
       | backend    : pycryptodome native modules: OK
       | stdlib     : ok
       | ENVIRONMENT READY
-  ok   endsheet.py --check (alias)                    0.1s
+  ok   endsheet.py --check (alias)                    0.2s
       $ python endsheet.py --check
-      | python     : 3.12.10 - C:\Users\kavyk\AppData\Local\Programs\Python\Python312\python.exe
+      | python     : 3.12.10 - C:\Users\kavyk\OneDrive\Desktop\Projects\IS Lab\Wizards\Endsem_Wizard\.venv\Scripts\python.exe
       | pycryptodome: 4.1.0
       | backend    : pycryptodome native modules: OK
       | stdlib     : ok
@@ -62,188 +62,322 @@
       | ------------------------------------------------------------
       | RESULT: READY
       | ============================================================
-  ok   wizard.py --presets                            0.1s
+  ok   wizard.py --presets                            0.2s
       $ python wizard.py --presets
-      |   evoting     end-sem sample paper: secure electronic voting system
-      |   trade       financial trade reports, RSA signatures, encrypted totals
-      |   medical     hospital records, ECDSA, encrypted comparison of readings
-      |   banking     bank transactions, DSA signatures, multiplicative RSA
       |   documents   Lab 8 shaped question: encrypted document store with search
+      |   healthcare  HealthCare Inc. (Lab 4 Q2): Rabin keys + a key management service
+      |   drm         DigiRights Inc. (Lab 4 additional): ElGamal DRM, licences that expire
+      |   enterprise  SecureCorp (Lab 4 Q1): RSA plus Diffie-Hellman between subsystems
+      |   everything  every component switched on at once - for practice, not an exam
       |   minimal     smallest answer that still earns ED + DSS + Hash marks
-  ok   wizard.py --options                            0.1s
+  ok   wizard.py --options                            0.2s
       $ python wizard.py --options
-      |   signature  : ELGAMAL, RSA, DSA, ECDSA, SCHNORR
-      |   homomorphic: PAILLIER, RSA_MUL, ELGAMAL_MUL, NONE
-      |   search     : SSE, PKSE, NONE
-      |   threshold  : on / off      timestamps: on / off    sockets: on / off
-      |   that is 144000 different answer files this one script can write
+      |   log chain  : on / off      (a tamper-evident audit log)
+      |   replay     : on / off      (nonce + timestamp window)
+      |   split      : on / off      (sockets on: also write the two halves
+      |                               as separate client and server files)
+      |   that is 90316800 different answer files this one script can write
 
 ==============================================================================
  D. EVERY PRESET: BUILD, RUN THE DEMO, RUN THE CLEAN TWIN
 ==============================================================================
-  ok   build preset evoting                           0.1s
+  ok   build preset evoting                           0.2s
       $ python wizard.py --build evoting
-      | written: answer_clean.py (815 lines, comments stripped)
       | NEXT:
       |    python answer.py demo        full run, no typing
       |    python answer.py             the menu  <- show this to the examiner
+      |    python answer_server.py   terminal 1  }  the same answer split
+      |    python answer_client.py   terminal 2  }  into two programs
       |    python answer.py reset       clear the stored files
-  ok     answer.py demo       (evoting)               0.9s
+  ok     answer.py demo       (evoting)               1.1s
       $ python answer.py demo
-      | 2026-10-23 05:11:22 | voter | DENIED view_all
-      | 2026-10-23 05:11:22 | alice | submit N001
-      | 2026-10-23 05:11:22 | server | verify N001 -> accepted
+      | 2026-10-23 10:23:39 | voter | DENIED view_hashes
+      | 2026-10-23 10:23:39 | alice | submit N001
+      | 2026-10-23 10:23:39 | server | verify N001 -> accepted
       | ======================================================================
       | demonstration finished
-  ok     answer_clean.py demo (evoting)               0.8s
-      $ python answer_clean.py demo
-      | 2026-10-23 05:11:23 | voter | DENIED view_all
-      | 2026-10-23 05:11:23 | alice | submit N001
-      | 2026-10-23 05:11:23 | server | verify N001 -> accepted
-      | ======================================================================
-      | demonstration finished
-  ok     answer.py reset      (evoting)               0.1s
+  ok     answer.py reset      (evoting)               0.2s
       $ python answer.py reset
       | stored files removed
-  ok   build preset trade                             0.1s
+  ok     answer_clean.py demo (evoting)               0.9s
+      $ python answer_clean.py demo
+      | 2026-10-23 10:23:40 | voter | DENIED view_hashes
+      | 2026-10-23 10:23:40 | alice | submit N001
+      | 2026-10-23 10:23:40 | server | verify N001 -> accepted
+      | ======================================================================
+      | demonstration finished
+  ok     answer_clean.py reset(evoting)               0.2s
+      $ python answer_clean.py reset
+      | stored files removed
+  ok   build preset trade                             0.2s
       $ python wizard.py --build trade
-      | written: answer_clean.py (751 lines, comments stripped)
       | NEXT:
       |    python answer.py demo        full run, no typing
       |    python answer.py             the menu  <- show this to the examiner
+      |    python answer_server.py   terminal 1  }  the same answer split
+      |    python answer_client.py   terminal 2  }  into two programs
       |    python answer.py reset       clear the stored files
-  ok     answer.py demo       (trade)                 1.5s
+  ok     answer.py demo       (trade)                 2.1s
       $ python answer.py demo
-      | 2026-10-23 05:11:24 | trader | DENIED view_all
-      | 2026-10-23 05:11:25 | alice | submit N001
-      | 2026-10-23 05:11:25 | server | verify N001 -> accepted
+      | 2026-10-23 10:23:42 | trader | DENIED view_hashes
+      | 2026-10-23 10:23:43 | alice | submit N001
+      | 2026-10-23 10:23:43 | server | verify N001 -> accepted
       | ======================================================================
       | demonstration finished
-  ok     answer_clean.py demo (trade)                 0.7s
-      $ python answer_clean.py demo
-      | 2026-10-23 05:11:25 | trader | DENIED view_all
-      | 2026-10-23 05:11:26 | alice | submit N001
-      | 2026-10-23 05:11:26 | server | verify N001 -> accepted
-      | ======================================================================
-      | demonstration finished
-  ok     answer.py reset      (trade)                 0.1s
+  ok     answer.py reset      (trade)                 0.2s
       $ python answer.py reset
       | stored files removed
-  ok   build preset medical                           0.1s
+  ok     answer_clean.py demo (trade)                 1.6s
+      $ python answer_clean.py demo
+      | 2026-10-23 10:23:44 | trader | DENIED view_hashes
+      | 2026-10-23 10:23:44 | alice | submit N001
+      | 2026-10-23 10:23:44 | server | verify N001 -> accepted
+      | ======================================================================
+      | demonstration finished
+  ok     answer_clean.py reset(trade)                 0.2s
+      $ python answer_clean.py reset
+      | stored files removed
+  ok   build preset medical                           0.2s
       $ python wizard.py --build medical
-      | written: answer_clean.py (737 lines, comments stripped)
       | NEXT:
       |    python answer.py demo        full run, no typing
       |    python answer.py             the menu  <- show this to the examiner
+      |    python answer_server.py   terminal 1  }  the same answer split
+      |    python answer_client.py   terminal 2  }  into two programs
       |    python answer.py reset       clear the stored files
-  ok     answer.py demo       (medical)               1.1s
+  ok     answer.py demo       (medical)               0.9s
       $ python answer.py demo
-      | 2026-10-23 05:11:26 | patient | DENIED view_all
-      | 2026-10-23 05:11:27 | alice | submit N001
-      | 2026-10-23 05:11:27 | doctor | verify N001 -> accepted
+      | 2026-10-23 10:23:45 | patient | DENIED view_hashes
+      | 2026-10-23 10:23:46 | alice | submit N001
+      | 2026-10-23 10:23:46 | doctor | verify N001 -> accepted
       | ======================================================================
       | demonstration finished
-  ok     answer_clean.py demo (medical)               0.7s
-      $ python answer_clean.py demo
-      | 2026-10-23 05:11:27 | patient | DENIED view_all
-      | 2026-10-23 05:11:28 | alice | submit N001
-      | 2026-10-23 05:11:28 | doctor | verify N001 -> accepted
-      | ======================================================================
-      | demonstration finished
-  ok     answer.py reset      (medical)               0.1s
+  ok     answer.py reset      (medical)               0.2s
       $ python answer.py reset
       | stored files removed
-  ok   build preset banking                           0.1s
+  ok     answer_clean.py demo (medical)               1.0s
+      $ python answer_clean.py demo
+      | 2026-10-23 10:23:46 | patient | DENIED view_hashes
+      | 2026-10-23 10:23:47 | alice | submit N001
+      | 2026-10-23 10:23:47 | doctor | verify N001 -> accepted
+      | ======================================================================
+      | demonstration finished
+  ok     answer_clean.py reset(medical)               0.2s
+      $ python answer_clean.py reset
+      | stored files removed
+  ok   build preset banking                           0.2s
       $ python wizard.py --build banking
-      | written: answer_clean.py (775 lines, comments stripped)
       | NEXT:
       |    python answer.py demo        full run, no typing
       |    python answer.py             the menu  <- show this to the examiner
+      |    python answer_server.py   terminal 1  }  the same answer split
+      |    python answer_client.py   terminal 2  }  into two programs
       |    python answer.py reset       clear the stored files
-  ok     answer.py demo       (banking)               3.5s
+  ok     answer.py demo       (banking)               2.0s
       $ python answer.py demo
-      | 2026-10-23 05:11:31 | customer | DENIED view_all
-      | 2026-10-23 05:11:31 | alice | submit N001
-      | 2026-10-23 05:11:31 | officer | verify N001 -> accepted
-      | ======================================================================
-      | demonstration finished
-  ok     answer_clean.py demo (banking)               0.9s
-      $ python answer_clean.py demo
-      | 2026-10-23 05:11:32 | customer | DENIED view_all
-      | 2026-10-23 05:11:32 | alice | submit N001
-      | 2026-10-23 05:11:32 | officer | verify N001 -> accepted
+      | 2026-10-23 10:23:49 | customer | DENIED view_hashes
+      | 2026-10-23 10:23:49 | alice | submit N001
+      | 2026-10-23 10:23:49 | officer | verify N001 -> accepted
       | ======================================================================
       | demonstration finished
   ok     answer.py reset      (banking)               0.2s
       $ python answer.py reset
       | stored files removed
-  ok   build preset documents                         0.1s
+  ok     answer_clean.py demo (banking)               3.0s
+      $ python answer_clean.py demo
+      | 2026-10-23 10:23:52 | customer | DENIED view_hashes
+      | 2026-10-23 10:23:52 | alice | submit N001
+      | 2026-10-23 10:23:53 | officer | verify N001 -> accepted
+      | ======================================================================
+      | demonstration finished
+  ok     answer_clean.py reset(banking)               0.3s
+      $ python answer_clean.py reset
+      | stored files removed
+  ok   build preset documents                         0.2s
       $ python wizard.py --build documents
-      | written: answer_clean.py (544 lines, comments stripped)
+      | written: answer_clean.py (540 lines, comments stripped)
       | NEXT:
       |    python answer.py demo        full run, no typing
       |    python answer.py             the menu  <- show this to the examiner
       |    python answer.py reset       clear the stored files
-  ok     answer.py demo       (documents)             0.5s
+  ok     answer.py demo       (documents)             1.2s
       $ python answer.py demo
-      | 2026-10-23 05:11:33 | server | verify R003 -> rejected
-      | 2026-10-23 05:11:33 | auditor | DENIED submit
-      | 2026-10-23 05:11:33 | owner | DENIED view_all
+      | 2026-10-23 10:23:54 | server | verify R003 -> rejected
+      | 2026-10-23 10:23:54 | auditor | DENIED submit
+      | 2026-10-23 10:23:54 | owner | DENIED view_hashes
       | ======================================================================
       | demonstration finished
-  ok     answer_clean.py demo (documents)             0.2s
-      $ python answer_clean.py demo
-      | 2026-10-23 05:11:33 | server | verify R003 -> rejected
-      | 2026-10-23 05:11:33 | auditor | DENIED submit
-      | 2026-10-23 05:11:33 | owner | DENIED view_all
-      | ======================================================================
-      | demonstration finished
-  ok     answer.py reset      (documents)             0.1s
+  ok     answer.py reset      (documents)             0.2s
       $ python answer.py reset
       | stored files removed
-  ok   build preset minimal                           0.1s
-      $ python wizard.py --build minimal
-      | written: answer_clean.py (454 lines, comments stripped)
+  ok     answer_clean.py demo (documents)             0.8s
+      $ python answer_clean.py demo
+      | 2026-10-23 10:23:55 | server | verify R003 -> rejected
+      | 2026-10-23 10:23:55 | auditor | DENIED submit
+      | 2026-10-23 10:23:55 | owner | DENIED view_hashes
+      | ======================================================================
+      | demonstration finished
+  ok     answer_clean.py reset(documents)             0.2s
+      $ python answer_clean.py reset
+      | stored files removed
+  ok   build preset healthcare                        0.2s
+      $ python wizard.py --build healthcare
+      | NEXT:
+      |    python answer.py demo        full run, no typing
+      |    python answer.py             the menu  <- show this to the examiner
+      |    python answer_server.py   terminal 1  }  the same answer split
+      |    python answer_client.py   terminal 2  }  into two programs
+      |    python answer.py reset       clear the stored files
+  ok     answer.py demo       (healthcare)            2.2s
+      $ python answer.py demo
+      | 2026-10-23 10:23:57 | carol | KMS renew: v1 -> v2 | 21e770254e8a31788a4d7043b451e75feae39eccd3a93c8f03583dcbb778d5eb
+      | 2026-10-23 10:23:58 | alice | submit N001 | 0cc5caa62929a7cce4512625737c96827b15454199d17eade33ff16f1a2b5687
+      | 2026-10-23 10:23:58 | hospital | verify N001 -> accepted | 8d195f624d8c6b5ac97cf9dcbbd7f33d07dcb33ebbb21b12bda0ac1c35c5e97a
+      | ======================================================================
+      | demonstration finished
+  ok     answer.py reset      (healthcare)            0.2s
+      $ python answer.py reset
+      | stored files removed
+  ok     answer_clean.py demo (healthcare)            2.1s
+      $ python answer_clean.py demo
+      | 2026-10-23 10:23:59 | carol | KMS renew: v1 -> v2 | c288664df187ca26de86ad434955ffd8619685bf324d60ee48a7adf5e9de176f
+      | 2026-10-23 10:24:00 | alice | submit N001 | 7a4e397bf4ccca7f8cb5a49dcae14eba009dcdd9ee37c0b21aa001c7d4906461
+      | 2026-10-23 10:24:00 | hospital | verify N001 -> accepted | 8c0c8401b6bc2f2357c5f4f503c194d7df65acca433efdc6e664749f6624514a
+      | ======================================================================
+      | demonstration finished
+  ok     answer_clean.py reset(healthcare)            0.2s
+      $ python answer_clean.py reset
+      | stored files removed
+  ok   build preset drm                               0.2s
+      $ python wizard.py --build drm
+      | written: answer_clean.py (708 lines, comments stripped)
       | NEXT:
       |    python answer.py demo        full run, no typing
       |    python answer.py             the menu  <- show this to the examiner
       |    python answer.py reset       clear the stored files
-  ok     answer.py demo       (minimal)               1.1s
+  ok     answer.py demo       (drm)                   0.6s
       $ python answer.py demo
-      | 2026-10-23 05:11:35 | server | verify R003 -> rejected
-      | 2026-10-23 05:11:35 | auditor | DENIED submit
-      | 2026-10-23 05:11:35 | user | DENIED view_all
+      | 2026-10-23 10:24:01 | distributor | verify R003 -> rejected
+      | 2026-10-23 10:24:01 | carol | KMS generate: ElGamal key v2
+      | 2026-10-23 10:24:01 | carol | KMS renew: v1 -> v2
       | ======================================================================
       | demonstration finished
-  ok     answer_clean.py demo (minimal)               0.2s
-      $ python answer_clean.py demo
-      | 2026-10-23 05:11:35 | server | verify R003 -> rejected
-      | 2026-10-23 05:11:35 | auditor | DENIED submit
-      | 2026-10-23 05:11:35 | user | DENIED view_all
-      | ======================================================================
-      | demonstration finished
-  ok     answer.py reset      (minimal)               0.1s
+  ok     answer.py reset      (drm)                   0.2s
       $ python answer.py reset
+      | stored files removed
+  ok     answer_clean.py demo (drm)                   0.7s
+      $ python answer_clean.py demo
+      | 2026-10-23 10:24:02 | distributor | verify R003 -> rejected
+      | 2026-10-23 10:24:02 | carol | KMS generate: ElGamal key v2
+      | 2026-10-23 10:24:02 | carol | KMS renew: v1 -> v2
+      | ======================================================================
+      | demonstration finished
+  ok     answer_clean.py reset(drm)                   0.2s
+      $ python answer_clean.py reset
+      | stored files removed
+  ok   build preset enterprise                        0.2s
+      $ python wizard.py --build enterprise
+      | NEXT:
+      |    python answer.py demo        full run, no typing
+      |    python answer.py             the menu  <- show this to the examiner
+      |    python answer_server.py   terminal 1  }  the same answer split
+      |    python answer_client.py   terminal 2  }  into two programs
+      |    python answer.py reset       clear the stored files
+  ok     answer.py demo       (enterprise)            1.6s
+      $ python answer.py demo
+      | 2026-10-23 10:24:03 | server | REPLAY rejected R001_again | 729b48a5d99d9397e79d78644c9ae84d55e22870bee7db3d0ef06c040df6e789
+      | 2026-10-23 10:24:04 | alice | submit N001 | b1d1c713429ffe64c795b0d237f68b16ef01715291a644f25bac50505fc1ab61
+      | 2026-10-23 10:24:04 | hr | verify N001 -> accepted | 60815abfebff40e4b0d93c708ae3dd21b685514af4c91e066d42df2be91da3cb
+      | ======================================================================
+      | demonstration finished
+  ok     answer.py reset      (enterprise)            0.2s
+      $ python answer.py reset
+      | stored files removed
+  ok     answer_clean.py demo (enterprise)            2.0s
+      $ python answer_clean.py demo
+      | 2026-10-23 10:24:05 | server | REPLAY rejected R001_again | 85dd8163a94ae0ff0789764dd513a875a2eda6c389f6bfc966fb9d4595d0bd0f
+      | 2026-10-23 10:24:06 | alice | submit N001 | 90466147e3733f89b4ef6623378575022f6b725edec56ae1404ca91329b3f1f2
+      | 2026-10-23 10:24:06 | hr | verify N001 -> accepted | 771a8f2ae4a18ed7118e59468949c9e1294177298f82ed35f29d0862f4fa6788
+      | ======================================================================
+      | demonstration finished
+  ok     answer_clean.py reset(enterprise)            0.2s
+      $ python answer_clean.py reset
+      | stored files removed
+  ok   build preset everything                        0.3s
+      $ python wizard.py --build everything
+      | NEXT:
+      |    python answer.py demo        full run, no typing
+      |    python answer.py             the menu  <- show this to the examiner
+      |    python answer_server.py   terminal 1  }  the same answer split
+      |    python answer_client.py   terminal 2  }  into two programs
+      |    python answer.py reset       clear the stored files
+  ok     answer.py demo       (everything)            2.2s
+      $ python answer.py demo
+      | 2026-10-23 10:24:08 | server | REPLAY rejected R001_again | 3f5d425074fa1e06110298610fc9787b6061f26f5db130b41c2959d8ac6ac654
+      | 2026-10-23 10:24:09 | alice | submit N001 | 7ecd61551fe6b8f8b1ee896b07d6e6d3475e0aaf9c6caf5d65a48209af276852
+      | 2026-10-23 10:24:09 | server | verify N001 -> accepted | 79caf235b675b68a18acb75ebc15f1a9564115743f2c3ff8b22bdcb5fc3b903f
+      | ======================================================================
+      | demonstration finished
+  ok     answer.py reset      (everything)            0.3s
+      $ python answer.py reset
+      | stored files removed
+  ok     answer_clean.py demo (everything)            1.3s
+      $ python answer_clean.py demo
+      | 2026-10-23 10:24:10 | server | REPLAY rejected R001_again | 33bccbfe28695cf4aea45634c337b33d4abbd425d09546e6111647602bc3248e
+      | 2026-10-23 10:24:10 | alice | submit N001 | db2a23ebe7487bfb56afe3a10f3e08cfcb6641dff012c3befe442f42731cf869
+      | 2026-10-23 10:24:10 | server | verify N001 -> accepted | cac35597143885c5d84d12902e5b79376f533a7d3b7c2cd7b48ba6c3b7762438
+      | ======================================================================
+      | demonstration finished
+  ok     answer_clean.py reset(everything)            0.2s
+      $ python answer_clean.py reset
+      | stored files removed
+  ok   build preset minimal                           0.2s
+      $ python wizard.py --build minimal
+      | written: answer_clean.py (456 lines, comments stripped)
+      | NEXT:
+      |    python answer.py demo        full run, no typing
+      |    python answer.py             the menu  <- show this to the examiner
+      |    python answer.py reset       clear the stored files
+  ok     answer.py demo       (minimal)               0.3s
+      $ python answer.py demo
+      | 2026-10-23 10:24:11 | server | verify R003 -> rejected
+      | 2026-10-23 10:24:11 | auditor | DENIED submit
+      | 2026-10-23 10:24:11 | user | DENIED view_hashes
+      | ======================================================================
+      | demonstration finished
+  ok     answer.py reset      (minimal)               0.2s
+      $ python answer.py reset
+      | stored files removed
+  ok     answer_clean.py demo (minimal)               1.0s
+      $ python answer_clean.py demo
+      | 2026-10-23 10:24:12 | server | verify R003 -> rejected
+      | 2026-10-23 10:24:12 | auditor | DENIED submit
+      | 2026-10-23 10:24:12 | user | DENIED view_hashes
+      | ======================================================================
+      | demonstration finished
+  ok     answer_clean.py reset(minimal)               0.2s
+      $ python answer_clean.py reset
       | stored files removed
 
 ==============================================================================
  E. THE MENU AND THE CLIENT/SERVER PATH (on the evoting build)
 ==============================================================================
-  ok   rebuild evoting                                0.1s
+  ok   rebuild evoting                                0.2s
       $ python wizard.py --build evoting
-      | written: answer_clean.py (815 lines, comments stripped)
       | NEXT:
       |    python answer.py demo        full run, no typing
       |    python answer.py             the menu  <- show this to the examiner
+      |    python answer_server.py   terminal 1  }  the same answer split
+      |    python answer_client.py   terminal 2  }  into two programs
       |    python answer.py reset       clear the stored files
-  ok   answer.py menu, every item driven              0.5s
+  ok   answer.py menu, every item driven              0.4s
       $ python answer.py
-      | MAIN MENU: 1 VOTER | 2 SERVER | 3 TALLY | 4 AUDITOR | 5 Exit
-      | Input Choice: invalid choice
+      | AUDITOR MENU: 1 Hashes and signatures | 2 Audit log | 3 Access control policy | 4 Back
+      | Input Choice: 
       | SECUREVOTE
       | MAIN MENU: 1 VOTER | 2 SERVER | 3 TALLY | 4 AUDITOR | 5 Exit
       | Input Choice: Exit
-  ok   answer.py netdemo (real TCP)                   1.1s
+  ok   answer.py netdemo (real TCP)                   0.7s
       $ python answer.py netdemo
       | Decrypted ballot: CandidateID=1;ConstituencyID=101
       | Output: ElGamal signature valid
@@ -251,35 +385,53 @@
       | Output: timestamp within the valid period
       | Output: N001 accepted; encrypted CandidateID left untouched
       | [client] server replied: {'record_id': 'N001', 'accepted': True}
-  ok   answer.py reset                                0.1s
+  ok   answer.py reset                                0.2s
       $ python answer.py reset
+      | stored files removed
+  ok   separate client and server files written       
+  ok     client sends S001, server accepts it         
+  ok     client sends S002, server accepts it         
+  ok     the server process handled both              handled 2
+      | SecureVote - server. Ctrl+C to stop.
+      | [server] listening on 127.0.0.1:9099
+      | [server] ballot received from 127.0.0.1
+      | Output: private-key unwrap successful
+      | Decrypted ballot: CandidateID=1;ConstituencyID=101
+      | Output: ElGamal signature valid
+      | Output: recomputed sha512 matches stored hash
+      | Output: timestamp within the valid period
+  ok   answer_server.py reset                         0.2s
+      $ python answer_server.py reset
+      | stored files removed
+  ok   answer_client.py reset                         0.2s
+      $ python answer_client.py reset
       | stored files removed
 
 ==============================================================================
  F. EVERY PER-LAB QUESTION FILE
 ==============================================================================
-  ok   Concepts / c14_homomorphic_encryption.py       0.2s
+  ok   Concepts / c14_homomorphic_encryption.py       0.3s
       $ python c14_homomorphic_encryption.py
       | E(7) * E(3)  -> 21
       | --- encrypted comparison against 130 ---
       |   reading 118 -> normal
       |   reading 130 -> equal
       |   reading 165 -> HIGH
-  ok   Concepts / c15_searchable_encryption.py        0.2s
+  ok   Concepts / c15_searchable_encryption.py        0.3s
       $ python c15_searchable_encryption.py
       | server can count 'financial' matches with no key: 3
       | private key turns them into ids: ['doc1', 'doc2', 'doc5']
       | --- padding against the count attack ---
       | before: [1, 2, 3]
       | after : [3]
-  ok   Concepts / c16_threshold_secret_sharing.py     0.1s
+  ok   Concepts / c16_threshold_secret_sharing.py     0.3s
       $ python c16_threshold_secret_sharing.py
       |   shares sum back to the secret: True
       |   product of the three partials equals c^secret: True
       |   nobody ever held the whole exponent during that computation
       | --- splitting an AES key instead of an exponent ---
       |   recovered key: b'0123456789abcdef'
-  ok   Concepts / c17_text_and_data_utilities.py      0.1s
+  ok   Concepts / c17_text_and_data_utilities.py      0.2s
       $ python c17_text_and_data_utilities.py
       | minutes_between     : ['2025-11-03 10:00', '2025-11-03 10:01', '2025-11-03 10:02', '2025-11-03 10:03']
       | ID    TAG  STATUS  
@@ -294,39 +446,39 @@
       | Threshold  : True
       | Text utils : THEHOUSEISSOLD
       | Toolkit loaded OK
-  ok   Lab7_Homomorphic_Encryption / exercise_questions/q1.py 0.1s
+  ok   Lab7_Homomorphic_Encryption / exercise_questions/q1.py 0.2s
       $ python exercise_questions/q1.py
       | E(a) * 3 plain    -> 45 (expected 45 )
       | Note: E(a) * E(b) does NOT give a*b. Paillier adds only.
       | Note: encrypting 15 twice gives different ciphertexts, because r is
       |       random every time - that is what makes Paillier semantically secure.
-      | same plaintext, two runs: 0x3995f1532fbe43dad4... 0x6b49c615401857e5fa...
-  ok   Lab7_Homomorphic_Encryption / exercise_questions/q2.py 0.1s
+      | same plaintext, two runs: 0x97addb5449cdea23d8... 0xe41825e6801d8652ca...
+  ok   Lab7_Homomorphic_Encryption / exercise_questions/q2.py 0.2s
       $ python exercise_questions/q2.py
       | And the homomorphism lets an attacker forge: given E(m) they can
       | produce E(2m) without the private key:
       | E(a) * E(2) decrypts to 14 = 2 * 7
-      | Adding does NOT work: E(a) + E(b) decrypts to 110562236845681916954416...  (garbage)
-  ok   Lab7_Homomorphic_Encryption / additional_questions/q1.py 0.1s
+      | Adding does NOT work: E(a) + E(b) decrypts to 902252375284302334317464...  (garbage)
+  ok   Lab7_Homomorphic_Encryption / additional_questions/q1.py 0.3s
       $ python additional_questions/q1.py
       | For ADDITION on encrypted data you need Paillier (exercise 1).
       | --- Side by side ---
       |   Paillier : multiply ciphertexts -> ADD plaintexts
       |   ElGamal  : multiply ciphertexts -> MULTIPLY plaintexts
       |   RSA      : multiply ciphertexts -> MULTIPLY plaintexts (but deterministic)
-  ok   Lab7_Homomorphic_Encryption / additional_questions/q2.py 0.1s
+  ok   Lab7_Homomorphic_Encryption / additional_questions/q2.py 0.3s
       $ python additional_questions/q2.py
       | --- a weighted figure, still on encrypted data ---
       | encrypted cost estimate: 663000  expected: 663000
       | What was protected: no party ever saw another party's row.
       | What leaked: the number of participants and the aggregate itself.
-  ok   Lab7_Homomorphic_Encryption / additional_questions/q3.py 0.1s
+  ok   Lab7_Homomorphic_Encryption / additional_questions/q3.py 0.3s
       $ python additional_questions/q3.py
       | Any 3 of the 5 shares work - try a different sample:
-      | shares [1, 4, 5] -> 329000
+      | shares [1, 3, 5] -> 329000
       | No individual salary was ever decrypted, and no single authority
       | could have decrypted anything on its own.
-  ok   Lab7_Homomorphic_Encryption / additional_questions/q4.py 0.4s
+  ok   Lab7_Homomorphic_Encryption / additional_questions/q4.py 1.4s
       $ python additional_questions/q4.py
       | * RSA encryption with e = 65537 is the fastest of the three, and
       |   decryption the slowest, because d is full size.
@@ -334,42 +486,42 @@
       |   scheme - microseconds. The cost is always in encrypt/decrypt.
       | * Paillier is the only one of the three that ADDS, which is why every
       |   vote-tallying or sum-of-salaries question uses it.
-  ok   Lab7_Homomorphic_Encryption / additional_questions/q5.py 0.1s
+  ok   Lab7_Homomorphic_Encryption / additional_questions/q5.py 0.3s
       $ python additional_questions/q5.py
       | --- the aggregate the hospital is actually allowed to publish ---
       | mean blood pressure over 5 patients = 130
       | real mean = 130
       | What leaked: one bit per patient (above or below the threshold), plus
       | the mean. Individual readings never left their owner in the clear.
-  ok   Lab8_Searchable_Encryption / exercise_questions/q1.py 0.1s
+  ok   Lab8_Searchable_Encryption / exercise_questions/q1.py 0.2s
       $ python exercise_questions/q1.py
       | asked about most often. That is the known leakage of SSE.
       | Enter a word to search (Enter to quit):   doc4 : encryption protects sensitive data
       |   doc5 : secure data requires encryption
       |   doc8 : aes encrypts data using a secret key
       | Enter a word to search (Enter to quit):
-  ok   Lab8_Searchable_Encryption / exercise_questions/q2.py 0.2s
+  ok   Lab8_Searchable_Encryption / exercise_questions/q2.py 0.3s
       $ python exercise_questions/q2.py
       |  would need pairing-based PEKS, which is outside this syllabus.
       | Enter search word (Enter to quit):   doc1 : python programming language
       |   doc3 : python supports encryption
       |   doc7 : python programming basics
       | Enter search word (Enter to quit):
-  ok   Lab8_Searchable_Encryption / additional_questions/q1.py 0.5s
+  ok   Lab8_Searchable_Encryption / additional_questions/q1.py 1.0s
       $ python additional_questions/q1.py
       | --- which property comes from which step ---
       |   AES-256-GCM session key   confidentiality + transport integrity
       |   RSA-OAEP key wrapping     only the named recipient can open it
       |   RSA PKCS#1 signature      authenticity and non-repudiation
       |   SHA-256 stored digest     integrity of the record at rest
-  ok   Lab8_Searchable_Encryption / additional_questions/q2.py 0.1s
+  ok   Lab8_Searchable_Encryption / additional_questions/q2.py 0.2s
       $ python additional_questions/q2.py
       |  that is a configuration fault on the inside, not an attack.
       | --- the limits of this kind of detection ---
       |  Signature based NIDS only catches what a rule describes. It cannot see
       |  inside TLS, it misses anything new, and noisy rules cause alert fatigue.
       |  Anomaly based detection catches the unknown but produces false positives.
-  ok   Lab8_Searchable_Encryption / additional_questions/q3.py 0.1s
+  ok   Lab8_Searchable_Encryption / additional_questions/q3.py 0.2s
       $ python additional_questions/q3.py
       |  exact keyword          1 HMAC         result count      
       |  AND / OR               n lookups      each term's count 
@@ -377,49 +529,49 @@
       |  range                  k buckets      which bucket      
       |  updates                revocation list update pattern    
       |  padding                x4.9 storage   none from counts
-  ok   Lab7_Homomorphic_Encrypt / sample_questions/q1.py demo 0.2s
+  ok   Lab7_Homomorphic_Encrypt / sample_questions/q1.py demo 0.3s
       $ python sample_questions/q1.py demo
       | --- ACCESS CONTROL ---
       | ACCESS DENIED: hr cannot reveal
       | ACCESS DENIED: employee cannot aggregate
       | check: real total = 23  real average = 3.83
       | ==================================================================
-  ok     reset                                        0.1s
+  ok     reset                                        0.2s
       $ python sample_questions/q1.py reset
       | reset
-  ok   Lab8_Searchable_Encrypti / sample_questions/q1.py demo 0.4s
+  ok   Lab8_Searchable_Encrypti / sample_questions/q1.py demo 0.9s
       $ python sample_questions/q1.py demo
-      | 2026-10-23 05:11:41 | reviewer | verify D002 -> FAILED
-      | 2026-10-23 05:11:41 | auditor | DENIED read
-      | 2026-10-23 05:11:41 | staff | DENIED verify
+      | 2026-10-23 10:24:26 | reviewer | verify D002 -> FAILED
+      | 2026-10-23 10:24:26 | auditor | DENIED read
+      | 2026-10-23 10:24:26 | staff | DENIED verify
       | ======================================================================
       | demonstration finished
-  ok     reset                                        0.1s
+  ok     reset                                        0.2s
       $ python sample_questions/q1.py reset
       | stored files removed
   ok   Endsem_Sample_Question_A / evoting.py demo     1.1s
       $ python evoting.py demo
-      | 2026-10-23 05:11:41 | voter | DENIED threshold_decrypt
-      | 2026-10-23 05:11:42 | alice | cast N001
-      | 2026-10-23 05:11:42 | server | verify N001 -> accepted
+      | 2026-10-23 10:24:27 | voter | DENIED threshold_decrypt
+      | 2026-10-23 10:24:28 | alice | cast N001
+      | 2026-10-23 10:24:28 | server | verify N001 -> accepted
       | ======================================================================
       | demonstration finished
-  ok     reset                                        0.1s
+  ok     reset                                        0.2s
       $ python evoting.py reset
       | stored files removed
 
 ==============================================================================
  G. THE TWO WIZARD SELF-TESTS (the slow ones)
 ==============================================================================
-  ok   endsheet --selftest : 40 configurations        73.9s
+  ok   endsheet --selftest : every option, built and run 188.1s
       $ python wizard.py --selftest
       |   ok    no timestamps
       |   ok    no sockets
       |   ok    bare minimum
       |   ok    everything on
       | ------------------------------------------------------------------------
-      | 40/40 passed
-  ok   playsheet --selftest : the mid-sem checks      15.9s
+      | 65/65 passed
+  ok   playsheet --selftest : the mid-sem checks      20.6s
       $ python playsheet.py --selftest
       | lean answer files: 19/19 built, ran and detected tampering
       | ======================================================
@@ -430,9 +582,9 @@
 ==============================================================================
  SUMMARY
 ==============================================================================
-  checks run : 76
-  passed     : 76
+  checks run : 108
+  passed     : 108
   failed     : 0
-  time taken : 112 seconds
+  time taken : 260 seconds
 
   EVERYTHING PASSED

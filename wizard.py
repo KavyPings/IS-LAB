@@ -1,36 +1,26 @@
 #!/usr/bin/env python3
 r"""
-================================================================================
- wizard.py - ONE entry point for both answer writers
-================================================================================
+wizard.py - the launcher. Run it from the IS Lab folder.
 
-The problem this file solves: the wizards live two folders deep, so
-"python endsheet.py" only works if you happen to be standing in exactly the
-right directory. This file sits in the IS Lab folder and finds them itself,
-so the path can never be wrong.
+    python wizard.py --check            is this machine ready
+    python wizard.py                    the questions, then write the answer
+    python wizard.py --build evoting    build a preset, no questions
+    python wizard.py --presets          the ready-made scenarios
+    python wizard.py --options          every value every setting accepts
+    python wizard.py --selftest         build and run every option
+    python wizard.py --help             the full exam guide
 
-USE  (from the IS Lab folder, or with the full path from anywhere)
+    python wizard.py --midsem --check   the same flags for the Lab 1-6 wizard
+    python wizard.py --midsem
 
-    python wizard.py --check            is the environment ready
-    python wizard.py                    run the end-sem wizard (same as --wizard)
-    python wizard.py --wizard           the same thing, spelled out
-    python wizard.py --build evoting    build a preset without the questions
-    python wizard.py --presets          list the ready-made scenarios
-    python wizard.py --options          every value each setting accepts
-    python wizard.py --selftest         build and run 40 configurations
+The wizards themselves live two folders down, in Wizards/. This file finds
+them, so the path can never be wrong, and it writes its output into the IS
+Lab folder whichever directory you started from. endsheet.py and
+playsheet.py beside it are the same launcher under the wizards' own names.
 
-    python wizard.py --midsem --check   the same flags, but for Lab 1-6
-    python wizard.py --midsem --wizard
-
-Anything after the flag is passed straight through to the real wizard, so
-every option in Wizards/Endsem_Wizard/INSTRUCTIONS.md works here too.
-
-WHERE THE OUTPUT GOES
-    answer.py and answer_clean.py are written into the IS Lab folder - the
-    folder this file is in - no matter which directory you started from.
-    Then:   python answer.py demo      full run, no typing
-            python answer.py           the interactive menu
-================================================================================
+Everything after the flag is passed straight through. The exam guide below
+comes from the end-sem wizard itself; the long form is in
+Wizards/Endsem_Wizard/INSTRUCTIONS.md.
 """
 
 import os
@@ -47,6 +37,14 @@ def main():
 
     if args and args[0] in ("-h", "--help", "help"):
         print(__doc__)
+        # then the exam guide, read straight out of the end-sem wizard so the
+        # two can never drift apart
+        try:
+            text = open(ENDSEM, encoding="utf-8").read()
+            begin = text.index('r"""') + 4
+            print(text[begin:text.index('"""', begin)])
+        except Exception:
+            pass
         return
 
     # --midsem (or just "midsem") picks the Lab 1-6 wizard instead

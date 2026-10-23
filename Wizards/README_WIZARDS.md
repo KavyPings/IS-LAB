@@ -23,10 +23,17 @@ Wizards/
 │   ├── playsheet.py           Labs 1-6   (mid-sem syllabus)
 │   ├── MIDSEM_EXAM_PLAN.md    the full mid-sem strategy and trimming guide
 │   └── INSTRUCTIONS.md        how to drive playsheet.py
+├── MANUAL_COVERAGE.md         all three manuals audited against the options
 └── Endsem_Wizard/
     ├── endsheet.py            Labs 1-8   (end-sem syllabus)
-    └── INSTRUCTIONS.md        how to drive endsheet.py
+    ├── READING_THE_QUESTION.md  how to decode a question into settings,
+    │                            with the sample paper as the worked example
+    └── INSTRUCTIONS.md        setup from nothing, then the five exam steps
 ```
+
+**On a machine that has never run this folder**, start at
+`Endsem_Wizard/INSTRUCTIONS.md` **Step 0** — Python, the venv, the one
+library (`pycryptodome`), and `python checkup.py` to prove it all works.
 
 ## Which one
 

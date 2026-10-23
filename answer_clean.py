@@ -70,7 +70,6 @@ def short(value, n=44):
 
 
 def hexs(value):
-
     if isinstance(value, bytes):
         return value.hex().upper()
     if isinstance(value, int):
@@ -82,12 +81,10 @@ def hexs(value):
 
 
 def new_key():
-
     return get_random_bytes(key_bytes)
 
 
 def encrypt_data(key, data):
-
     iv = get_random_bytes(16)
     cipher = AES.new(key, AES.MODE_CBC, iv)
     return iv, cipher.encrypt(pad(data.encode(), 16))
@@ -95,7 +92,6 @@ def encrypt_data(key, data):
 
 def decrypt_data(key, iv, ciphertext):
     cipher = AES.new(key, AES.MODE_CBC, iv)
-
     return unpad(cipher.decrypt(ciphertext), 16).decode(errors="replace")
 
 
@@ -103,7 +99,6 @@ def decrypt_data(key, iv, ciphertext):
 
 
 def server_keys():
-
     if os.path.exists("server_private.pem"):
         key = RSA.import_key(open("server_private.pem", "rb").read())
     else:
@@ -114,7 +109,6 @@ def server_keys():
 
 
 def wrap_key(session_key, public_key):
-
     return PKCS1_OAEP.new(public_key).encrypt(session_key)
 
 
@@ -126,14 +120,12 @@ def unwrap_key(blob, private_key):
 
 
 def hash_data(data):
-
     if isinstance(data, str):
         data = data.encode()
     return hashlib.sha512(data).hexdigest()
 
 
 def hash_matches(data, stored_hex):
-
     return hash_data(data) == stored_hex
 
 
@@ -141,7 +133,6 @@ def hash_matches(data, stored_hex):
 
 
 def make_signing_key():
-
     p = getPrime(sign_bits)
     g = 2
     x = random.randrange(2, p - 2)
@@ -149,7 +140,6 @@ def make_signing_key():
 
 
 def sign_hash(digest_hex, key):
-
     p, g, x = key["p"], key["g"], key["x"]
     h = int(digest_hex, 16) % (p - 1)
     while True:
@@ -162,7 +152,6 @@ def sign_hash(digest_hex, key):
 
 
 def verify_hash(digest_hex, signature, key):
-
     p, g, y = key["p"], key["g"], key["y"]
     r, s = int(signature[0]), int(signature[1])
     if not 0 < r < p:
@@ -179,7 +168,6 @@ def sig_text(signature):
 
 
 def he_keygen():
-
     if os.path.exists("he_key.json"):
         return {k: int(v) for k, v in json.load(open("he_key.json")).items()}
     p = getPrime(paillier_bits // 2)
@@ -193,7 +181,6 @@ def he_keygen():
 
 
 def he_encrypt(m, pub):
-
     n, nn = pub["n"], pub["nn"]
     r = random.randrange(1, n)
     while GCD(r, n) != 1:
@@ -202,7 +189,6 @@ def he_encrypt(m, pub):
 
 
 def he_combine(c1, c2, pub):
-
     return (c1 * c2) % pub["nn"]
 
 
@@ -219,7 +205,6 @@ HE_OPERATION = "addition"
 
 
 def shamir_split(secret, t, n, prime):
-
     coeffs = [secret] + [random.randrange(1, prime) for _ in range(t - 1)]
     shares = []
     for i in range(1, n + 1):
@@ -229,7 +214,6 @@ def shamir_split(secret, t, n, prime):
 
 
 def shamir_combine(shares, prime):
-
     total = 0
     for xi, yi in shares:
         num, den = 1, 1
@@ -242,7 +226,6 @@ def shamir_combine(shares, prime):
 
 
 def share_prime():
-
     return getPrime(he_secret.bit_length() + 16)
 
 
@@ -259,12 +242,10 @@ def one_share_alone():
 
 
 def search_token(label):
-
     return hmac.new(index_key, label.lower().encode(), hashlib.sha256).hexdigest()
 
 
 def index_add(label, record_id):
-
     iv, ct = encrypt_data(index_key, record_id)
     search_index.setdefault(search_token(label), []).append([iv.hex(), ct.hex()])
 
@@ -285,7 +266,6 @@ def search_by_tag(value):
 
 
 def search_by_time_range(start, end):
-
     t0 = datetime.strptime(start, "%Y-%m-%d %H:%M")
     t1 = datetime.strptime(end, "%Y-%m-%d %H:%M")
     found = []
@@ -299,7 +279,6 @@ def search_by_time_range(start, end):
 
 
 def log_action(who, what):
-
     open(log_file, "a").write("%s | %s | %s\n" % (timestamp(), who, what))
 
 
@@ -328,6 +307,7 @@ def load_all():
     if os.path.exists("index.json"):
         search_index = json.load(open("index.json"))
 
+
 def get_signing_key(user):
     if user not in signer_keys:
         signer_keys[user] = make_signing_key()
@@ -335,16 +315,25 @@ def get_signing_key(user):
     return signer_keys[user]
 
 
-# ---------- Access control ----------
+def signer_public(user):
+    return signer_keys[user]
 
 
-def check_permission(role, action):
+# ---------- Access control: role based access control ----------
 
-    if action not in roles.get(role, []):
-        print("ACCESS DENIED:", role, "cannot", action)
-        log_action(role, "DENIED " + action)
+
+def check_permission(subject, action):
+    if action not in roles.get(subject, []):
+        print("ACCESS DENIED:", subject, "cannot", action)
+        log_action(subject, "DENIED " + action)
         return False
     return True
+
+
+def show_policy():
+    print("%-12s %s" % ("ROLE", "ACTIONS IT MAY PERFORM"))
+    for role in roles:
+        print("%-12s %s" % (role, ", ".join(roles[role])))
 
 
 # ---------- Client side: build and submit ----------
@@ -354,36 +343,33 @@ def submit_record(user, record_id, value, tag, when=None):
     if not check_permission(client_role, "submit"):
         return None
 
-
     body = "CandidateID=%s;ConstituencyID=%s" % (value, tag)
     print("Ballot UTF-8:", body)
-
 
     digest = hash_data(body)
     print("Output sha512(hex):", digest[:64])
     print("                  ", digest[64:])
-
 
     session_key = new_key()
     iv, ciphertext = encrypt_data(session_key, body)
     print("Output %s(hex):" % ("nonce" if "CBC" == "CTR" else "IV"), hexs(iv))
     print("Output AES-256-CBC CT(hex):", hexs(ciphertext))
 
-
     wrapped = wrap_key(session_key, server_public)
     print("Output session key wrapped with RSA-2048: [%d bytes] %s"
           % (len(wrapped), short(hexs(wrapped), 32)))
 
-
-    signing_key = get_signing_key(user)
+    try:
+        signing_key = get_signing_key(user)
+    except PermissionError as exc:
+        print("CANNOT SUBMIT:", exc)
+        return None
     signature = sign_hash(digest, signing_key)
     print("Output ElGamal signature:", sig_text(signature))
-
 
     value_ct = he_encrypt(int(value), he_pub)
     packed_ct = he_encrypt(MAX_ITEMS ** int(value), he_pub)
     print("Output homomorphic CandidateID CT(hex):", short(hexs(value_ct), 26))
-
 
     stamp = when or timestamp()
     print("Timestamp:", stamp)
@@ -413,7 +399,6 @@ def submit_record(user, record_id, value, tag, when=None):
 
 
 def within_window(stamp):
-
     return window_opens <= stamp <= window_closes
 
 
@@ -426,10 +411,8 @@ def verify_record(record_id):
 
     row = records[record_id]
 
-
     session_key = unwrap_key(bytes.fromhex(row["wrapped_key"]), server_private)
     print("Output: private-key unwrap successful")
-
 
     try:
         body = decrypt_data(session_key, bytes.fromhex(row["iv"]),
@@ -438,15 +421,17 @@ def verify_record(record_id):
         body = ""
     print("Decrypted ballot:", body or "<unreadable, padding broken>")
 
-
-    sig_ok = verify_hash(row["hash"], row["signature"], signer_keys[row["user"]])
+    try:
+        sig_ok = verify_hash(row["hash"], row["signature"],
+                             signer_public(row["user"]))
+    except PermissionError as exc:
+        print("Output: cannot verify -", exc)
+        sig_ok = False
     print("Output: ElGamal signature", "valid" if sig_ok else "INVALID")
-
 
     hash_ok = hash_matches(body, row["hash"])
     print("Output: recomputed sha512",
           "matches stored hash" if hash_ok else "DOES NOT MATCH")
-
 
     time_ok = within_window(row["timestamp"])
     print("Output: timestamp",
@@ -461,7 +446,6 @@ def verify_record(record_id):
 
 
 def tamper_record(record_id):
-
     if not check_permission(server_role, "tamper_test"):
         return
     row = records[record_id]
@@ -501,7 +485,6 @@ def reveal(combined):
     if not check_permission(analyst_role, "threshold_decrypt"):
         return None
     total, packed = combined
-
 
     prime = share_prime()
     shares = shamir_split(he_secret, threshold_t, threshold_n, prime)
@@ -547,7 +530,6 @@ def view_all():
 
 
 def show_hashes():
-
     if not check_permission(auditor_role, "view_hashes"):
         return
     for rid, row in records.items():
@@ -558,7 +540,6 @@ def show_hashes():
 
 
 def send_frame(sock, obj):
-
     data = json.dumps(obj).encode()
     sock.sendall(len(data).to_bytes(4, "big") + data)
 
@@ -612,7 +593,7 @@ def run_client(user="alice", record_id="N001", value=1, tag=101):
     sock = socket.create_connection((host, port), timeout=10)
     payload = {"record_id": record_id,
                "envelope": records[record_id],
-               "signer_key": signer_keys[user]}
+               "signer_key": get_signing_key(user)}
     payload["index"] = fresh
     send_frame(sock, payload)
     print("[client] server replied:", recv_frame(sock))
@@ -620,7 +601,6 @@ def run_client(user="alice", record_id="N001", value=1, tag=101):
 
 
 def netdemo():
-
     thread = threading.Thread(target=run_server, kwargs={"once": True}, daemon=True)
     thread.start()
     time.sleep(0.5)
@@ -690,13 +670,15 @@ def analyst_menu():
 
 def auditor_menu():
     while True:
-        print("\nAUDITOR MENU: 1 Hashes and signatures | 2 Audit log | 3 Back")
+        print("\nAUDITOR MENU: 1 Hashes and signatures | 2 Audit log | 3 Access control policy | 4 Back")
         choice = input("Input Choice: ").strip()
         if choice == "1":
             show_hashes()
         elif choice == "2":
             show_log()
         elif choice == "3":
+            show_policy()
+        elif choice == "4":
             return
 
 
@@ -765,9 +747,12 @@ def demo():
     print("\n--- AUDITOR: integrity data only ---")
     show_hashes()
 
-    print("\n--- ACCESS CONTROL ---")
-    check_permission(auditor_role, "submit")
-    check_permission(client_role, "view_all")
+    print("\n--- ACCESS CONTROL: role based access control ---")
+    show_policy()
+    print()
+    check_permission("auditor", "submit")
+    check_permission("voter", "view_hashes")
+    print("allowed:", check_permission("voter", "submit"))
 
     print("\n--- CLIENT-SERVER over TCP ---")
     netdemo()

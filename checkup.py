@@ -7,7 +7,7 @@ checkup.py - test everything in this folder, or tidy it up.
     python checkup.py quick      the fast subset (skips the two self-tests)
 
 The test covers: the environment, the crypto backend, known-answer vectors
-for the pure-Python fallback, both wizards, all six presets built and run,
+for the pure-Python fallback, both wizards, all ten presets built and run,
 the menus, the TCP client/server, every per-lab question file, and both
 wizard self-tests. Everything it finds goes into checkup_report.txt, and a
 summary is printed at the end.
@@ -72,6 +72,12 @@ def run(label, args, cwd=None, stdin_text="", expect=None, timeout=1800,
     elif expect and expect not in output:
         problem = "missing %r" % expect
 
+    if problem:
+        # show the error on the console too, not only in the report file:
+        # "exit code 1" on its own is not something you can act on
+        tail = [l.strip() for l in output.strip().split("\n") if l.strip()]
+        if tail:
+            problem += "  <- " + tail[-1][:90]
     record(label, not problem, problem or "%.1fs" % elapsed)
     lines.append("      $ python " + " ".join(args))
     for line in output.strip().split("\n")[-6:]:
@@ -267,14 +273,34 @@ def test_vectors():
 # C  the wizards
 # ---------------------------------------------------------------------------
 
-PRESETS = ["evoting", "trade", "medical", "banking", "documents", "minimal"]
+PRESETS = ["evoting", "trade", "medical", "banking", "documents",
+           "healthcare", "drm", "enterprise", "everything", "minimal"]
 
+# Every keystroke the menu test feeds in, menu by menu. This has to stay in
+# step with block_menu() in endsheet.py - if a menu gains an entry, the test
+# notices, which is the point.
 MENU_SCRIPT = (
-    "1\n1\nalice\nB001\n1\n101\n2\nalice\n3\n"      # client: submit, view mine, back
-    "2\n1\nB001\n2\n1\n101\n3\n4\nB001\n1\nB001\n5\n"  # server: verify, search, all, tamper
-    "3\n1\n2\n3\n4\n"                                # analyst: aggregate, reveal, one share
-    "4\n1\n2\n3\n"                                   # auditor: hashes, log
-    "9\n5\n"                                         # bad choice, then exit
+    # MAIN -> client: submit one record, view my records, back
+    "1\n"
+    "1\nalice\nB001\n1\n101\n"
+    "2\nalice\n"
+    "3\n"
+    # MAIN -> server: verify, search by tag, list all, tamper, verify again, back
+    "2\n"
+    "1\nB001\n"
+    "2\n1\n101\n"
+    "3\n"
+    "4\nB001\n"
+    "1\nB001\n"
+    "5\n"
+    # MAIN -> analyst: aggregate, reveal, one share alone, back
+    "3\n"
+    "1\n2\n3\n4\n"
+    # MAIN -> auditor: hashes, audit log, access control policy, back
+    "4\n"
+    "1\n2\n3\n4\n"
+    # MAIN -> exit
+    "5\n"
 )
 
 
@@ -295,25 +321,79 @@ def test_wizards(quick):
     say(" D. EVERY PRESET: BUILD, RUN THE DEMO, RUN THE CLEAN TWIN")
     say("=" * 78)
     for preset in PRESETS:
+        clear_state()        # each preset starts clean whatever the last one did
         run("build preset %-10s" % preset, ["wizard.py", "--build", preset],
             expect="written:")
         run("  answer.py demo       (%s)" % preset, ["answer.py", "demo"],
             expect="demonstration finished")
+        run("  answer.py reset      (%s)" % preset, ["answer.py", "reset"],
+            expect="stored files removed")
         run("  answer_clean.py demo (%s)" % preset, ["answer_clean.py", "demo"],
             expect="demonstration finished")
-        run("  answer.py reset      (%s)" % preset, ["answer.py", "reset"])
+        run("  answer_clean.py reset(%s)" % preset, ["answer_clean.py", "reset"],
+            expect="stored files removed")
     say()
 
     say("=" * 78)
     say(" E. THE MENU AND THE CLIENT/SERVER PATH (on the evoting build)")
     say("=" * 78)
+    clear_state()
     run("rebuild evoting", ["wizard.py", "--build", "evoting"], expect="written:")
     run("answer.py menu, every item driven", ["answer.py"], stdin_text=MENU_SCRIPT,
         expect="MAIN MENU")
     run("answer.py netdemo (real TCP)", ["answer.py", "netdemo"],
         expect="accepted", timeout=300)
-    run("answer.py reset", ["answer.py", "reset"])
+    run("answer.py reset", ["answer.py", "reset"],
+        expect="stored files removed")
+    clear_state()
+    test_split_files()
     say()
+
+
+def test_split_files():
+    """Start answer_server.py as its own process, then submit with
+    answer_client.py - the two-terminal demonstration, done for real."""
+    server = os.path.join(ROOT, "answer_server.py")
+    client = os.path.join(ROOT, "answer_client.py")
+    if not (os.path.exists(server) and os.path.exists(client)):
+        record("separate client and server files written", False, "not found")
+        return
+    record("separate client and server files written", True)
+
+    # -u: terminate() does not flush a block-buffered pipe, so the server's
+    # output has to be unbuffered or it is lost and the count reads zero
+    handle = subprocess.Popen([PY, "-u", server], cwd=ROOT, stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT, text=True, env=CHILD_ENV)
+    try:
+        time.sleep(4)
+        ok = True
+        for user, rid, value, tag in (("alice", "S001", "1", "101"),
+                                      ("bob", "S002", "2", "102")):
+            done = subprocess.run([PY, client, user, rid, value, tag], cwd=ROOT,
+                                  capture_output=True, text=True, timeout=300,
+                                  errors="replace", env=CHILD_ENV)
+            text = (done.stdout or "") + (done.stderr or "")
+            good = done.returncode == 0 and "'accepted': True" in text
+            record("  client sends %s, server accepts it" % rid, good,
+                   "" if good else text.strip().split("\n")[-1][:70])
+            ok &= good
+    finally:
+        handle.terminate()
+        try:
+            output = handle.communicate(timeout=10)[0] or ""
+        except subprocess.TimeoutExpired:
+            handle.kill()
+            output = ""
+    served = output.count("received from")
+    record("  the server process handled both", served >= 2,
+           "handled %d" % served)
+    for line in output.strip().split("\n")[:8]:
+        if line.strip():
+            lines.append("      | " + line[:140])
+    run("answer_server.py reset", ["answer_server.py", "reset"],
+        expect="stored files removed")
+    run("answer_client.py reset", ["answer_client.py", "reset"],
+        expect="stored files removed")
 
 
 # ---------------------------------------------------------------------------
@@ -368,8 +448,10 @@ def test_selftests():
     say("=" * 78)
     say(" G. THE TWO WIZARD SELF-TESTS (the slow ones)")
     say("=" * 78)
-    run("endsheet --selftest : 40 configurations",
-        ["wizard.py", "--selftest"], expect="40/40 passed", timeout=5400)
+    # the wizard's own self-test exits non-zero if any configuration fails,
+    # so the return code is the check - no brittle count to keep in step
+    run("endsheet --selftest : every option, built and run",
+        ["wizard.py", "--selftest"], expect="passed", timeout=7200)
     run("playsheet --selftest : the mid-sem checks",
         ["playsheet.py", "--selftest"], timeout=5400)
     say()
@@ -384,6 +466,25 @@ RUN_ARTIFACTS = ["records.json", "ballots.json", "index.json", "numbers.json",
                  "keys.json", "he_key.json", "pkse_key.json", "paillier_key.json",
                  "server_private.pem", "server_public.pem",
                  "ec_private.pem", "ec_public.pem", "audit.log"]
+
+
+def clear_state(where=None):
+    """Delete the files a previous run left behind, without running answer.py.
+
+    The harness must not depend on the thing it is testing: when reset() is
+    broken, one failure used to leave stale records and keys behind and every
+    later preset failed on them, which hid the real fault behind thirty
+    cascading ones.
+    """
+    folder = where or ROOT
+    for name in RUN_ARTIFACTS + ["server_key.json", "kms_keys.json",
+                                 "key_management.log", "pkse_numbers.json"]:
+        path = os.path.join(folder, name)
+        try:
+            if os.path.exists(path):
+                os.remove(path)
+        except OSError:
+            pass
 
 
 def tidy():

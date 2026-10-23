@@ -1,55 +1,184 @@
 #!/usr/bin/env python3
 r"""
 ================================================================================
- endsheet.py - END-SEM answer writer for the Information Security Lab (ICT 3141)
- Syllabus covered: Lab 1 - Lab 8
+ endsheet.py - END-SEM ANSWER WRITER        Information Security Lab, ICT 3141
+                                            syllabus: Lab 1 - Lab 8
 ================================================================================
 
-WHAT IT DOES
-  You answer a few questions about the exam question in front of you.
-  endsheet.py writes a complete, menu-driven, runnable answer file:
+WHAT TO DO IN THE EXAM, IN ORDER
+(a machine with nothing installed: do STEP 0 below first - it takes 4 minutes)
 
-      answer.py         the answer with comments  (read this, understand it)
-      answer_clean.py   the same answer, comments stripped (show this as output)
+  1  Read the question with the CHECKLIST below beside you and fill it in.
+     Ten minutes here saves twenty later.
 
-  The generated answer always covers the five marked components of an end-sem
-  scenario question:
+  2  python wizard.py                 answer the prompts, Enter accepts
+     (or  python wizard.py --build evoting  to skip the prompts)
 
-      Client-Server  client builds the record, server processes it (and a real
-                     TCP client/server if you ask for it)
-      ED             symmetric encryption + public-key key wrapping
-      DSS            digital signature: sign and verify
-      Hash           hashing and integrity verification
-      Search         searchable encryption index (SSE or PKSE)
+  3  python answer.py demo            every output, no typing. Run this FIRST.
 
-  plus whatever else the question adds: partial homomorphic encryption and
-  encrypted aggregation (Lab 7), threshold decryption, trusted timestamps and
-  deadline checks, role-based access control, and file-backed storage.
+  4  python answer.py                 the interactive menu
+     THE PAPER HALVES THE MARKS IF THE PROGRAM IS NOT MENU DRIVEN.
+     Click through every item once while the examiner watches.
 
-FIRST TIME SETUP
-  python -m venv .venv
-  .venv\Scripts\activate                 (Windows)
-  source .venv/bin/activate              (macOS / Linux)
-  pip install pycryptodome
-  python endsheet.py --check
+  5  Write up one short paragraph per marked component. The patterns are in
+     INSTRUCTIONS.md next to this file.
 
-NORMAL EXAM USE
-  python endsheet.py --wizard            answer the questions, get answer.py
-  python answer.py demo                  full run, no typing, every output
-  python answer.py                       the interactive menu (this is marked)
+  Two docs sit next to this file:
+     READING_THE_QUESTION.md   the sample paper taken apart sentence by
+                               sentence, with the settings each one sets
+     INSTRUCTIONS.md           the same five steps, in full
 
-OTHER COMMANDS
-  python endsheet.py --check             is the environment ready
-  python endsheet.py --presets           list the ready-made scenarios
-  python endsheet.py --build evoting     build a preset without the questions
-  python endsheet.py --selftest          build and run many combinations
-  python endsheet.py --options           every value each setting accepts
+STEP 0 - SETTING UP FROM NOTHING  (a lab machine, a fresh laptop, a USB copy)
 
-IF THE WIZARD IS NOT WHAT THE QUESTION WANTS
-  Build the closest preset anyway, then edit the SETTINGS block at the top of
-  answer.py, or paste the function you need out of
-  IS_Lab_Codebase/Concepts/ALL_CONCEPTS_TOOLKIT.py.
-================================================================================
+  0.1  Is Python there?
+         python --version              Windows
+         python3 --version             macOS / Linux
+       3.8 or newer is fine. "not recognized" -> install it:
+         Windows   winget install Python.Python.3.12      (or python.org,
+                   and TICK "Add python.exe to PATH" in the installer)
+         macOS     brew install python
+         Linux     sudo apt install python3 python3-venv python3-pip
+
+  0.2  Put the folder somewhere with a short path and no OneDrive if you can.
+       Copy the whole "IS Lab" folder from the USB. These must come with it:
+         wizard.py  endsheet.py  playsheet.py     the launchers
+         islab.py   pylib/                        the locked-down-machine rescue
+         checkup.py                               the self test
+         Wizards/                                 both wizards + the docs
+         IS_Lab_Codebase/                         per-lab answers, Concepts/
+       Nothing else is needed to build an answer.
+
+  0.3  cd into it. The path has a space, so it needs quotes:
+         cd "C:\Users\<you>\Desktop\IS Lab"       Windows
+         cd ~/Desktop/"IS Lab"                    macOS / Linux
+
+  0.4  Make a virtual environment and switch into it:
+         Windows PowerShell   python -m venv .venv
+                              .\.venv\Scripts\Activate.ps1
+         Windows cmd          python -m venv .venv
+                              .venv\Scripts\activate.bat
+         macOS / Linux        python3 -m venv .venv
+                              source .venv/bin/activate
+       The prompt gains a "(.venv)". If PowerShell refuses with
+       "running scripts is disabled", either use cmd instead, or run once:
+         Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+       If "No module named venv" on Linux: sudo apt install python3-venv.
+       A venv is optional - everything also works with a plain global
+       install - but it keeps the lab machine clean and is one marks-free
+       sentence in the write-up.
+
+  0.5  One library, no others:
+         python -m pip install --upgrade pip
+         python -m pip install pycryptodome
+       Offline, or pip is blocked? Skip this. The pure-Python backend in
+       pylib/ covers AES, DES, 3DES, every mode, GCM/EAX, the hashes, RSA,
+       OAEP and ECC with no install at all. Carry a wheel if you want the
+       fast path: pip download pycryptodome -d wheels  beforehand, then
+       python -m pip install --no-index --find-links wheels pycryptodome
+       DO NOT install "crypto" or "pycrypto" - they shadow Crypto and break
+       the imports. If you did: python -m pip uninstall crypto pycrypto.
+
+  0.6  Prove it:
+         python wizard.py --check          must end  ENVIRONMENT READY
+         python checkup.py                 ~3 min, writes checkup_report.txt
+       --check's "backend" line says native or pure; either is fine, the
+       outputs are byte-identical. checkup.py is the one command that proves
+       the whole folder - run it once the day before, not in the exam.
+
+  0.7  Next session, you only reactivate:
+         .\.venv\Scripts\Activate.ps1   /   source .venv/bin/activate
+       Forgetting it gives "ModuleNotFoundError: No module named 'Crypto'".
+
+THE FOUR FILES IT WRITES
+
+  answer.py          the answer, menu driven, with teaching comments.
+                     Read this one - it is how you explain the code.
+  answer_clean.py    the same program, comments stripped. Attach this as the
+                     code listing.
+  answer_server.py   the server half as a program of its own. No comments,
+                     nothing it does not use. Terminal 1.
+  answer_client.py   the client half, same treatment. Terminal 2.
+
+  The two halves are built from the same tested code as answer.py, then
+  everything each half never calls is removed, so they come out roughly a
+  quarter of the size. Use them when the examiner wants to SEE a client and
+  a server as separate programs:
+       terminal 1:  python answer_server.py
+       terminal 2:  python answer_client.py alice B001 1 101
+
+CHECKLIST - copy this onto the rough sheet
+
+  cipher        AES-128 / AES-192 / AES-256 / DES / 3DES
+  mode          CBC / ECB / CFB / OFB / CTR / GCM / EAX
+  key wrap      RSA / ECC / ELGAMAL / RABIN / DH / NONE
+  hash          sha512 / sha384 / sha256 / sha224 / sha1 / sha3_256 / md5 / custom
+  signature     ELGAMAL / RSA / DSA / ECDSA / SCHNORR
+  homomorphic   PAILLIER (adds) / RSA_MUL / ELGAMAL_MUL (multiply) / NONE
+  search        SSE / PKSE / NONE
+  access        RBAC / DAC / MAC / BLP / ABAC / TIME / PROB
+  key mgmt      on = generate, distribute, revoke, renew, rotate, sealed storage
+  threshold     on = t-of-n Shamir, "no single authority may decrypt"
+  timestamps    on = trusted timestamp and a deadline check
+  sockets       on = a real TCP client and server
+  hmac          on = a keyed tag beside the digest
+  log chain     on = a tamper-evident audit log
+  replay        on = reject replayed and stale submissions
+  roles         copy the question's bullet points
+  record / tag / value words   what one item is called, what is searched on,
+                               which numeric field gets totalled
+
+WORDS IN THE QUESTION -> WHAT THEY SET
+
+  "tally", "total without revealing individual"       homomorphic = PAILLIER
+  "product of the encrypted values"                   RSA_MUL or ELGAMAL_MUL
+  "Rabin cryptosystem"                                key wrap = RABIN
+  "Diffie-Hellman", "shared secret"                   key wrap = DH
+  "ElGamal with public key (p, g, h)"                 key wrap = ELGAMAL
+  "write your own hash", "5381", "times 33"           hash = custom
+  "authenticated encryption", "detects tampering"     mode = GCM or EAX
+  "searchable index", "search without revealing"      search = SSE
+  "public key so many parties can index"              search = PKSE
+  "clearance", "classification"                       access = MAC
+  "no read up", "no write down"                       access = BLP
+  "attributes", "policy function"                     access = ABAC
+  "limited-time access", "licence expires"            access = TIME
+  "trust level", "risk", "probability"                access = PROB
+  "owner decides", "access matrix"                    access = DAC
+  "generate, distribute, revoke, renew keys"          key mgmt = on
+  "secure storage of private keys"                    key mgmt = on
+  "no single authority can decrypt"                   threshold = on
+  "trusted timestamp", "before the deadline"          timestamps = on
+  "client side ... server side"                        sockets = on
+  "menu driven"                                       not optional
+
+EVERY COMMAND
+
+  python wizard.py --check          is this machine ready
+  python wizard.py                  the questions, then write the answer
+  python wizard.py --presets        the ready-made scenarios
+  python wizard.py --build NAME     build one without the questions
+  python wizard.py --options        every value every setting accepts
+  python wizard.py --selftest       build and run every option (a few minutes)
+
+  python answer.py demo             the full run, no typing
+  python answer.py                  the menu
+  python answer.py netdemo          client and server in one process
+  python answer.py reset            delete the stored files, start clean
+
+  (wizard.py, endsheet.py and playsheet.py at the top of the IS Lab folder
+   are the same launcher; run whichever name you remember.)
+
+IF SOMETHING GOES WRONG
+
+  wrong folder           cd into the IS Lab folder; "python wizard.py" there
+  Crypto import fails    python wizard.py  loads the pure-Python fallback in
+                         pylib/ by itself; see pylib/README.md
+  RSA-4096 too slow      set rsa_bits = 2048 in the SETTINGS block
+  nothing builds         python wizard.py --build minimal  always works
+  ten minutes left       build minimal, run its demo, write up what it shows
+
+  Everything the examiner is likely to change mid-question is in the SETTINGS
+  block at the top of answer.py. Nothing below it needs to be touched.
 """
 
 import ast
@@ -75,20 +204,38 @@ CIPHER_INFO = {
     "3DES": ("DES3", 24, 8),
 }
 
-MODES = ["CBC", "ECB", "CFB", "OFB", "CTR"]
+MODES = ["CBC", "ECB", "CFB", "OFB", "CTR", "GCM", "EAX"]
 
 # name -> (hashlib call, digest length in hex characters)
 HASH_INFO = {
     "sha512": ("hashlib.sha512", 128),
+    "sha384": ("hashlib.sha384", 96),
     "sha256": ("hashlib.sha256", 64),
+    "sha224": ("hashlib.sha224", 56),
     "sha1": ("hashlib.sha1", 40),
+    "sha3_256": ("hashlib.sha3_256", 64),
     "md5": ("hashlib.md5", 32),
+    # Lab 5 exercise 1: the hash you write yourself - 5381, times 33 per
+    # character, xor-shift mixing, masked to 32 bits
+    "custom": ("custom_hash", 8),
 }
 
 SIGNS = ["ELGAMAL", "RSA", "DSA", "ECDSA", "SCHNORR"]
-WRAPS = ["RSA", "ECC", "NONE"]
+WRAPS = ["RSA", "ECC", "ELGAMAL", "RABIN", "DH", "NONE"]
 HES = ["PAILLIER", "RSA_MUL", "ELGAMAL_MUL", "NONE"]
 SEARCHES = ["SSE", "PKSE", "NONE"]
+
+# the seven access control models Lab 4 lists, each with its own rule
+ACCESS_MODELS = ["RBAC", "DAC", "MAC", "BLP", "ABAC", "TIME", "PROB"]
+ACCESS_LABEL = {
+    "RBAC": "role based access control",
+    "DAC": "discretionary access control (an access matrix)",
+    "MAC": "mandatory access control (clearance vs classification)",
+    "BLP": "Bell-LaPadula (no read up, no write down)",
+    "ABAC": "attribute based access control (a policy function)",
+    "TIME": "time based access control (grants that expire)",
+    "PROB": "probabilistic access control (a trust score)",
+}
 
 DEFAULTS = {
     "system_name": "SecureSystem",
@@ -108,6 +255,12 @@ DEFAULTS = {
     "threshold_n": 3,
     "timestamps": True,
     "sockets": True,
+    "access": "RBAC",
+    "kms": False,           # a key management service: revoke, renew, rotate, seal
+    "hmac": False,          # also attach a keyed HMAC tag beside the digest
+    "log_chain": False,     # hash-chain the audit log so edits are detectable
+    "replay": False,        # reject replayed and stale submissions
+    "split": True,          # also write a separate client file and server file
     "roles": {
         "client": ["submit", "view_own"],
         "server": ["verify", "search", "view_all", "tamper_test"],
@@ -189,6 +342,60 @@ PRESETS = {
             "auditor": ["view_hashes", "audit"],
         },
     },
+    "healthcare": {
+        "_about": "HealthCare Inc. (Lab 4 Q2): Rabin keys + a key management service",
+        "system_name": "MediKeys", "record_word": "record",
+        "tag_word": "hospital", "value_word": "reading",
+        "cipher": "AES-256", "mode": "CBC", "wrap": "RABIN", "hash": "sha256",
+        "sign": "RSA", "he": "NONE", "search": "SSE",
+        "threshold": False, "timestamps": True, "sockets": True,
+        "kms": True, "access": "MAC", "log_chain": True,
+        "roles": {
+            "clinic": ["submit", "view_own"],
+            "hospital": ["verify", "search", "view_all", "tamper_test"],
+            "auditor": ["view_hashes", "audit"],
+        },
+    },
+    "drm": {
+        "_about": "DigiRights Inc. (Lab 4 additional): ElGamal DRM, licences that expire",
+        "system_name": "DigiRights", "record_word": "asset",
+        "tag_word": "catalogue", "value_word": "licence",
+        "cipher": "AES-256", "mode": "GCM", "wrap": "ELGAMAL", "hash": "sha256",
+        "sign": "ELGAMAL", "he": "NONE", "search": "NONE",
+        "threshold": False, "timestamps": True, "sockets": False,
+        "kms": True, "access": "TIME",
+        "roles": {
+            "creator": ["submit", "view_own"],
+            "distributor": ["verify", "search", "view_all", "tamper_test"],
+            "auditor": ["view_hashes", "audit"],
+        },
+    },
+    "enterprise": {
+        "_about": "SecureCorp (Lab 4 Q1): RSA plus Diffie-Hellman between subsystems",
+        "system_name": "SecureCorp", "record_word": "document",
+        "tag_word": "subsystem", "value_word": "amount",
+        "cipher": "AES-256", "mode": "CBC", "wrap": "DH", "hash": "sha256",
+        "sign": "RSA", "he": "PAILLIER", "search": "SSE",
+        "threshold": False, "timestamps": True, "sockets": True,
+        "kms": True, "access": "ABAC", "hmac": True, "log_chain": True,
+        "replay": True,
+        "roles": {
+            "finance": ["submit", "view_own"],
+            "hr": ["verify", "search", "view_all", "tamper_test"],
+            "supply": ["aggregate", "threshold_decrypt"],
+            "auditor": ["view_hashes", "audit"],
+        },
+    },
+    "everything": {
+        "_about": "every component switched on at once - for practice, not an exam",
+        "system_name": "SecureEverything", "record_word": "record",
+        "tag_word": "department", "value_word": "amount",
+        "cipher": "AES-256", "mode": "GCM", "wrap": "RSA", "hash": "sha512",
+        "sign": "ECDSA", "he": "PAILLIER", "search": "SSE",
+        "threshold": True, "timestamps": True, "sockets": True,
+        "kms": True, "access": "BLP", "hmac": True, "log_chain": True,
+        "replay": True,
+    },
     "minimal": {
         "_about": "smallest answer that still earns ED + DSS + Hash marks",
         "system_name": "SecureStore", "record_word": "record",
@@ -225,6 +432,9 @@ def fill(text, cfg):
         "<<MODE>>": cfg["mode"],
         "<<HASHFN>>": HASH_INFO[cfg["hash"]][0],
         "<<HASHNAME>>": cfg["hash"],
+        "<<HMACALGO>>": cfg["hash"] if cfg["hash"] in ("sha512", "sha384", "sha256",
+                                                      "sha224", "sha1", "md5")
+        else "sha256",
         "<<HALF>>": str(HASH_INFO[cfg["hash"]][1] // 2),
         "<<RSABITS>>": str(cfg["rsa_bits"]),
         "<<TT>>": str(cfg["threshold_t"]),
@@ -243,7 +453,7 @@ def banner(title):
 # BLOCK: header, imports and settings
 # ===========================================================================
 
-def block_head(cfg):
+def block_head(cfg, role="combined"):
     cls = CIPHER_INFO[cfg["cipher"]][0]
     lines = ["# <<SYS>> - Information Security Lab (ICT 3141)",
              "# <<CIPHER>> / <<MODE>> | <<HASHNAME>> | <<SIGNNAME>> signature"]
@@ -261,13 +471,36 @@ def block_head(cfg):
     lines.append("# generated by endsheet.py on " + datetime.now().strftime("%Y-%m-%d %H:%M"))
     lines.append("#")
     lines.append("# RUN")
-    lines.append("#   python <<OUT>>.py            interactive menu  <- this is what is marked")
-    lines.append("#   python <<OUT>>.py demo       full run, no typing, prints every output")
-    if cfg["sockets"]:
-        lines.append("#   python <<OUT>>.py netdemo    real TCP client-server submission")
-        lines.append("#   python <<OUT>>.py server     listen on 127.0.0.1:9099   (terminal 1)")
-        lines.append("#   python <<OUT>>.py client     submit over TCP            (terminal 2)")
-    lines.append("#   python <<OUT>>.py reset      delete the stored files and start clean")
+    if role == "server":
+        lines.append("#   THE SERVER HALF - run this in terminal 1, then <<OUT>>_client.py")
+        lines.append("#   in terminal 2. It listens on 127.0.0.1:9099, and for every")
+        lines.append("#   <<REC>> it receives it unwraps the key, verifies the signature,")
+        lines.append("#   recomputes the hash and stores the result.")
+        lines.append("#")
+        lines.append("#   python <<OUT>>_server.py            start listening")
+        lines.append("#   python <<OUT>>_server.py reset      delete the stored files")
+    elif role == "client":
+        lines.append("#   THE CLIENT HALF - run <<OUT>>_server.py in terminal 1 first.")
+        lines.append("#   This builds one <<REC>>, does all the client-side cryptography,")
+        lines.append("#   and sends it over TCP.")
+        lines.append("#")
+        lines.append("#   python <<OUT>>_client.py                      asks for the fields")
+        lines.append("#   python <<OUT>>_client.py alice R001 1 101     straight from the"
+                     " command line")
+    else:
+        lines.append("#   python <<OUT>>.py            interactive menu  <- this is what is marked")
+        lines.append("#   python <<OUT>>.py demo       full run, no typing, prints every output")
+        if cfg["sockets"]:
+            lines.append("#   python <<OUT>>.py netdemo    real TCP client-server in one process")
+            lines.append("#   python <<OUT>>.py server     listen on 127.0.0.1:9099 (terminal 1)")
+            lines.append("#   python <<OUT>>.py client     submit over TCP          (terminal 2)")
+            if cfg.get("split"):
+                lines.append("#")
+                lines.append("#   Two separate programs are written as well, if the examiner")
+                lines.append("#   wants a client and a server as different files:")
+                lines.append("#   python <<OUT>>_server.py     terminal 1")
+                lines.append("#   python <<OUT>>_client.py     terminal 2")
+        lines.append("#   python <<OUT>>.py reset      delete the stored files and start clean")
     head = "\n".join(lines) + "\n\n"
 
     bootstrap = []
@@ -286,10 +519,11 @@ def block_head(cfg):
         ]
 
     imports = ["import os", "import sys", "import json", "import hashlib"]
-    if cfg["search"] == "SSE":
+    if cfg["search"] == "SSE" or cfg["hmac"]:
         imports.append("import hmac")
     if cfg["sign"] in ("ELGAMAL", "SCHNORR") or cfg["he"] in ("PAILLIER", "ELGAMAL_MUL",
-                                                              "RSA_MUL") or cfg["search"] == "PKSE":
+                                                              "RSA_MUL") \
+            or cfg["search"] == "PKSE" or cfg["wrap"] in ("ELGAMAL", "RABIN", "DH"):
         imports.append("import random")
     if cfg["search"] == "PKSE":
         imports.append("import re")
@@ -306,6 +540,12 @@ def block_head(cfg):
         crypto.append("from Crypto.PublicKey import RSA")
     if cfg["wrap"] == "RSA":
         crypto.append("from Crypto.Cipher import PKCS1_OAEP")
+    if (cfg["wrap"] == "DH" or cfg["kms"]) and cls != "AES":
+        crypto.append("from Crypto.Cipher import AES")
+    if cfg["kms"]:
+        crypto.append("from Crypto.Protocol.KDF import PBKDF2")
+        if cfg["sign"] not in ("RSA", "DSA", "ECDSA"):
+            crypto.append("from Crypto.Hash import SHA256")
     if cfg["wrap"] == "ECC" or cfg["sign"] == "ECDSA":
         crypto.append("from Crypto.PublicKey import ECC")
     if cfg["wrap"] == "ECC":
@@ -321,7 +561,7 @@ def block_head(cfg):
     if cfg["sign"] in ("RSA", "DSA", "ECDSA") or cfg["wrap"] == "ECC":
         crypto.append("from Crypto.Hash import SHA256")
     if cfg["sign"] in ("ELGAMAL", "SCHNORR") or cfg["he"] in ("PAILLIER", "ELGAMAL_MUL") \
-            or cfg["search"] == "PKSE":
+            or cfg["search"] == "PKSE" or cfg["wrap"] in ("ELGAMAL", "RABIN", "DH"):
         crypto.append("from Crypto.Util.number import getPrime, GCD"
                       + (", isPrime" if cfg["sign"] == "SCHNORR" else ""))
     crypto.append("")
@@ -344,6 +584,9 @@ def block_head(cfg):
     settings.append("key_bytes = <<KLEN>>                   # <<CIPHER>> key length")
     if cfg["wrap"] == "RSA":
         settings.append("rsa_bits = <<RSABITS>>                 # 4096 also works, keygen is slower")
+    if cfg["wrap"] in ("ELGAMAL", "RABIN", "DH"):
+        settings.append("wrap_bits = 1024               # size of the %s modulus"
+                        % cfg["wrap"].title())
     if cfg["sign"] in ("ELGAMAL", "SCHNORR"):
         settings.append("sign_bits = 256                # size of the signature prime p")
     if cfg["he"] == "PAILLIER":
@@ -362,6 +605,20 @@ def block_head(cfg):
         settings.append("categories = {1: \"option one\", 2: \"option two\", 3: \"option three\"}")
     if cfg["sockets"]:
         settings.append("host, port = \"127.0.0.1\", 9099")
+    if cfg["kms"]:
+        settings.append('kms_passphrase = "change-me-in-the-exam"'
+                        '   # seals every private key at rest')
+        settings.append("kdf_iterations = 200000        # PBKDF2 rounds:"
+                        " DK = KDF(pass, salt, iterations)")
+        settings.append("key_lifetime_days = 365        # rotation renews"
+                        " anything older")
+    if cfg["hmac"]:
+        settings.append('integrity_key = hashlib.sha256('
+                        '(system_name + "-hmac").encode()).digest()')
+    if cfg["replay"]:
+        settings.append("replay_window = 500           # how many nonces to remember")
+        settings.append("replay_window_seconds = 300   # how old a timestamp may be")
+    settings += access_settings(cfg)
     settings.append("# ===== END SETTINGS =====\n")
 
     state = ["records = {}                    # <<REC>> id -> stored envelope"]
@@ -375,11 +632,97 @@ def block_head(cfg):
     state.append("log_file = \"audit.log\"")
     if cfg["he"] == "PAILLIER":
         state.append("MAX_ITEMS = 10 ** 6             # base used to pack the per-category counters")
+    if cfg["kms"]:
+        state.append("key_store = {}                 "
+                     "# owner -> {version, status, created, expires, sealed}")
+    if cfg["replay"]:
+        state.append("seen_nonces = []               "
+                     "# sliding window of the nonces already used")
     state.append("")
 
     return (head + "\n".join(bootstrap) + "\n".join(imports) + "\n"
             + "\n".join(crypto) + "\n" + guard
             + "\n".join(settings) + "\n" + "\n".join(state) + "\n")
+
+
+def access_facts(cfg):
+    """Work out the levels, attributes and grants the chosen model needs.
+
+    Everything is derived from the roles the question actually asks for, so
+    renaming a role in the wizard keeps the access model consistent.
+    """
+    order = list(cfg["roles"])
+    level = {role: i + 1 for i, role in enumerate(order)}
+    classification = {}
+    for role in order:
+        for action in cfg["roles"][role]:
+            classification.setdefault(action, level[role])
+    writes = [a for a in classification
+              if a in ("submit", "verify", "tamper_test", "threshold_decrypt")]
+    lowest, highest = order[0], order[-1]
+    # an action the lowest role is definitely not entitled to
+    high_action = next((a for a in cfg["roles"][highest]
+                        if a not in cfg["roles"][lowest]), "audit")
+    own_action = cfg["roles"][lowest][0]
+    return {"order": order, "level": level, "classification": classification,
+            "writes": sorted(writes), "lowest": lowest, "highest": highest,
+            "high_action": high_action, "own_action": own_action}
+
+
+def access_settings(cfg):
+    """The SETTINGS lines for the chosen access model."""
+    f = access_facts(cfg)
+    out = []
+    model = cfg["access"]
+    if model == "DAC":
+        out.append("access_matrix = {")
+        items = list(cfg["roles"].items())
+        for i, (role, actions) in enumerate(items):
+            out.append('    "%s": {"<<REC>>": %s}%s'
+                       % (role, json.dumps(actions), "," if i < len(items) - 1 else ""))
+        out.append("}")
+    elif model in ("MAC", "BLP"):
+        out.append("clearance = " + json.dumps(f["level"]))
+        out.append("classification = " + json.dumps(f["classification"]))
+        if model == "BLP":
+            out.append("WRITE_ACTIONS = " + json.dumps(f["writes"])
+                       + "    # everything else is a read")
+    elif model == "ABAC":
+        departments = {}
+        for i, role in enumerate(f["order"]):
+            departments[role] = ["ops", "ops", "analytics", "audit"][min(i, 3)]
+        out.append("user_attributes = {")
+        for i, role in enumerate(f["order"]):
+            out.append('    "%s": {"allowed": %s, "clearance": %d,'
+                       % (role, json.dumps(cfg["roles"][role]), f["level"][role]))
+            out.append('                  "department": "%s", "max_risk": 0.5}%s'
+                       % (departments[role], "," if i < len(f["order"]) - 1 else ""))
+        out.append("}")
+        out.append("object_attributes = {")
+        actions = sorted(f["classification"])
+        for i, action in enumerate(actions):
+            out.append('    "%s": {"sensitivity": %d}%s'
+                       % (action, f["classification"][action],
+                          "," if i < len(actions) - 1 else ""))
+        out.append("}")
+        out.append("environment_risk = 0.2         # 0 = trusted network, 1 = hostile")
+    elif model == "TIME":
+        out.append("time_grants = {")
+        items = list(cfg["roles"].items())
+        for i, (role, actions) in enumerate(items):
+            out.append('    "%s": {"actions": %s,' % (role, json.dumps(actions)))
+            out.append('           "from": "2000-01-01 00:00:00",')
+            out.append('           "to": "2099-12-31 23:59:59"}%s'
+                       % ("," if i < len(items) - 1 else ""))
+        out.append("}")
+    elif model == "PROB":
+        trust = {role: (0.5 if role == f["lowest"] else 0.9) for role in f["order"]}
+        out.append("trust_level = " + json.dumps(trust))
+        out.append("action_sensitivity = " + json.dumps(
+            {a: round(lvl / 10.0, 2) for a, lvl in sorted(f["classification"].items())}))
+        out.append("environment_risk = 0.1         # 0 = trusted network, 1 = hostile")
+        out.append("access_threshold = 0.2         # grant when P(access) reaches this")
+    return out
 
 
 HE_LABEL = {
@@ -490,6 +833,36 @@ def decrypt_data(key, iv, ciphertext):
     cipher = <<CLS>>.new(key, <<CLS>>.MODE_OFB, iv)
     return cipher.decrypt(ciphertext).decode(errors="replace")
 '''),
+    "GCM": ('''
+def encrypt_data(key, data):
+    # GCM is AUTHENTICATED encryption: it returns a 16-byte tag as well as the
+    # ciphertext, so the mode itself detects tampering. The tag is appended to
+    # the ciphertext here so the rest of the program keeps one blob to store.
+    cipher = <<CLS>>.new(key, <<CLS>>.MODE_GCM)
+    body, tag = cipher.encrypt_and_digest(data.encode())
+    return cipher.nonce, body + tag
+
+
+def decrypt_data(key, iv, ciphertext):
+    cipher = <<CLS>>.new(key, <<CLS>>.MODE_GCM, nonce=iv)
+    # raises ValueError("MAC check failed") if a single bit was changed
+    return cipher.decrypt_and_verify(ciphertext[:-16],
+                                     ciphertext[-16:]).decode(errors="replace")
+'''),
+    "EAX": ('''
+def encrypt_data(key, data):
+    # EAX is the other authenticated mode pycryptodome offers. Same shape as
+    # GCM: a nonce, a ciphertext, and a 16-byte tag appended to it.
+    cipher = <<CLS>>.new(key, <<CLS>>.MODE_EAX)
+    body, tag = cipher.encrypt_and_digest(data.encode())
+    return cipher.nonce, body + tag
+
+
+def decrypt_data(key, iv, ciphertext):
+    cipher = <<CLS>>.new(key, <<CLS>>.MODE_EAX, nonce=iv)
+    return cipher.decrypt_and_verify(ciphertext[:-16],
+                                     ciphertext[-16:]).decode(errors="replace")
+'''),
     "CTR": ('''
 def encrypt_data(key, data):
     # CTR mode: the random value is a nonce, not an IV, and it is never reused
@@ -568,6 +941,132 @@ def unwrap_key(blob, private_key):
     return cipher.decrypt_and_verify(rest[32:], rest[16:32])
 '''
 
+WRAP_ELGAMAL = '''
+def server_keys():
+    # ElGamal key pair for the receiver: p prime, g generator, y = g^x mod p.
+    # p must be comfortably larger than the session key read as a number.
+    if os.path.exists("server_key.json"):
+        key = {k: int(v) for k, v in json.load(open("server_key.json")).items()}
+    else:
+        p = getPrime(wrap_bits)
+        g = 2
+        x = random.randrange(2, p - 2)
+        key = {"p": p, "g": g, "y": pow(g, x, p), "x": x}
+        json.dump({k: str(v) for k, v in key.items()}, open("server_key.json", "w"))
+    return key, {"p": key["p"], "g": key["g"], "y": key["y"]}
+
+
+def wrap_key(session_key, public_key):
+    # c = (g^r mod p, m * y^r mod p). The pair is stored as two fixed-width
+    # big-endian halves, so the result is still a single bytes object.
+    p, g, y = public_key["p"], public_key["g"], public_key["y"]
+    m = int.from_bytes(session_key, "big")
+    r = random.randrange(2, p - 2)
+    size = (p.bit_length() + 7) // 8
+    return (pow(g, r, p).to_bytes(size, "big")
+            + ((m * pow(y, r, p)) % p).to_bytes(size, "big"))
+
+
+def unwrap_key(blob, private_key):
+    p, x = private_key["p"], private_key["x"]
+    size = len(blob) // 2
+    a = int.from_bytes(blob[:size], "big")
+    b = int.from_bytes(blob[size:], "big")
+    return ((b * pow(a, -x, p)) % p).to_bytes(key_bytes, "big")
+'''
+
+WRAP_RABIN = '''
+RABIN_MARKER = b"KEY:"              # redundancy, so the right root is known
+
+
+def server_keys():
+    # Rabin: n = p*q with both primes congruent to 3 mod 4 (Blum primes).
+    # Encryption is a single squaring - the cheapest public-key encryption
+    # there is - and that is exactly why decryption yields FOUR roots.
+    if os.path.exists("server_key.json"):
+        key = {k: int(v) for k, v in json.load(open("server_key.json")).items()}
+    else:
+        def blum_prime(bits):
+            while True:
+                candidate = getPrime(bits)
+                if candidate % 4 == 3:
+                    return candidate
+        p = blum_prime(wrap_bits // 2)
+        q = blum_prime(wrap_bits // 2)
+        while p == q:
+            q = blum_prime(wrap_bits // 2)
+        key = {"n": p * q, "p": p, "q": q}
+        json.dump({k: str(v) for k, v in key.items()}, open("server_key.json", "w"))
+    return key, {"n": key["n"]}
+
+
+def wrap_key(session_key, public_key):
+    # c = m^2 mod n, with a marker glued on first so that decryption can tell
+    # which of the four square roots was the real message
+    m = int.from_bytes(RABIN_MARKER + session_key, "big")
+    n = public_key["n"]
+    return pow(m, 2, n).to_bytes((n.bit_length() + 7) // 8, "big")
+
+
+def unwrap_key(blob, private_key):
+    n, p, q = private_key["n"], private_key["p"], private_key["q"]
+    c = int.from_bytes(blob, "big")
+    # a square root mod p and one mod q, then the Chinese Remainder Theorem
+    mp = pow(c, (p + 1) // 4, p)
+    mq = pow(c, (q + 1) // 4, q)
+    yp = pow(p, -1, q)
+    yq = pow(q, -1, p)
+    for sp in (mp, p - mp):
+        for sq in (mq, q - mq):
+            root = (sq * q * yq + sp * p * yp) % n
+            raw = root.to_bytes((root.bit_length() + 7) // 8 or 1, "big")
+            if raw.startswith(RABIN_MARKER):
+                return raw[len(RABIN_MARKER):]
+    raise ValueError("none of the four Rabin roots carried the marker")
+'''
+
+WRAP_DH = '''
+def server_keys():
+    # Diffie-Hellman: the receiver publishes p, g and B = g^b mod p.
+    # DH does not encrypt anything by itself - it AGREES a shared secret,
+    # which is then hashed into an AES key that wraps the session key.
+    if os.path.exists("server_key.json"):
+        key = {k: int(v) for k, v in json.load(open("server_key.json")).items()}
+    else:
+        p = getPrime(wrap_bits)
+        g = 2
+        b = random.randrange(2, p - 2)
+        key = {"p": p, "g": g, "B": pow(g, b, p), "b": b}
+        json.dump({k: str(v) for k, v in key.items()}, open("server_key.json", "w"))
+    return key, {"p": key["p"], "g": key["g"], "B": key["B"]}
+
+
+def dh_kek(shared, p):
+    # never use the raw DH number as a key: hash it to a fixed length first
+    return hashlib.sha256(shared.to_bytes((p.bit_length() + 7) // 8, "big")).digest()
+
+
+def wrap_key(session_key, public_key):
+    # a fresh ephemeral exponent per message, so every wrap uses a new key
+    p, g, B = public_key["p"], public_key["g"], public_key["B"]
+    a = random.randrange(2, p - 2)
+    kek = dh_kek(pow(B, a, p), p)
+    cipher = AES.new(kek, AES.MODE_GCM)
+    body, tag = cipher.encrypt_and_digest(session_key)
+    size = (p.bit_length() + 7) // 8
+    return pow(g, a, p).to_bytes(size, "big") + cipher.nonce + tag + body
+
+
+def unwrap_key(blob, private_key):
+    p, b = private_key["p"], private_key["b"]
+    size = (p.bit_length() + 7) // 8
+    A = int.from_bytes(blob[:size], "big")
+    rest = blob[size:]
+    kek = dh_kek(pow(A, b, p), p)
+    cipher = AES.new(kek, AES.MODE_GCM, nonce=rest[:16])
+    return cipher.decrypt_and_verify(rest[32:], rest[16:32])
+'''
+
 WRAP_NONE = '''
 def server_keys():
     # no public-key wrapping in this question: both sides already share the key
@@ -588,6 +1087,30 @@ def unwrap_key(blob, private_key):
 # ===========================================================================
 # BLOCK: hashing  (the Hash mark)
 # ===========================================================================
+
+BLOCK_CUSTOM_HASH = '''
+class Digest(str):
+    # so custom_hash(x).hexdigest() reads like hashlib and the rest of the
+    # program does not care which hash it was given
+    def hexdigest(self):
+        return str(self)
+
+    def digest(self):
+        return bytes.fromhex(str(self))
+
+def custom_hash(data):
+    # Lab 5 exercise 1: start at 5381, multiply by 33 and add each byte,
+    # mix with an xor-shift, and mask to 32 bits. This is the djb2 hash.
+    if isinstance(data, str):
+        data = data.encode()
+    h = 5381
+    for byte in data:
+        h = h * 33 + byte
+        h ^= (h >> 16)
+    return Digest(format(h & 0xFFFFFFFF, "08x"))
+
+
+'''
 
 BLOCK_HASH = '''
 def hash_data(data):
@@ -1037,10 +1560,19 @@ def load_all():
         signer_keys = json.load(open(key_file))
 <<LOAD_EXTRA>>
 
+'''
+
+BLOCK_GET_KEY = '''
 def get_signing_key(user):
     if user not in signer_keys:
         signer_keys[user] = make_signing_key()
         log_action(user, "<<SIGNNAME>> key pair generated")
+    return signer_keys[user]
+
+
+def signer_public(user):
+    # one place the verifier asks for a public key, so a key management
+    # service can be dropped in without touching the verify path
     return signer_keys[user]
 '''
 
@@ -1057,6 +1589,538 @@ def show_log():
     for line in open(log_file):
         print(line.rstrip())
 '''
+
+BLOCK_KMS = '''
+# A key management service, the Lab 4 shape: generate, distribute, revoke,
+# renew, rotate, expiry, sealed storage and an audit trail for each of them.
+#
+# The private half of every key is NEVER written out in the clear. It is
+# sealed with a key derived from a passphrase:
+#     DK = KDF(passphrase, salt, iterations)       <- Lab 4's KDF formula
+# and then encrypted with AES-GCM, so a stolen keys.json is useless on its own.
+
+def kdf_seal(secret, passphrase):
+    salt = get_random_bytes(16)
+    derived = PBKDF2(passphrase, salt, 32, count=kdf_iterations,
+                     hmac_hash_module=SHA256)
+    cipher = AES.new(derived, AES.MODE_GCM)
+    body, tag = cipher.encrypt_and_digest(secret.encode()
+                                          if isinstance(secret, str) else secret)
+    return {"salt": salt.hex(), "nonce": cipher.nonce.hex(),
+            "tag": tag.hex(), "body": body.hex(), "iterations": kdf_iterations}
+
+
+def kdf_open(sealed, passphrase):
+    derived = PBKDF2(passphrase, bytes.fromhex(sealed["salt"]), 32,
+                     count=sealed.get("iterations", kdf_iterations),
+                     hmac_hash_module=SHA256)
+    cipher = AES.new(derived, AES.MODE_GCM, nonce=bytes.fromhex(sealed["nonce"]))
+    return cipher.decrypt_and_verify(bytes.fromhex(sealed["body"]),
+                                     bytes.fromhex(sealed["tag"])).decode()
+
+
+def key_generate(name):
+    # a fresh key pair, version 1, sealed at rest, with an expiry date
+    material = make_signing_key()
+    created = datetime.now()
+    record = {"version": key_store.get(name, {}).get("version", 0) + 1,
+              "status": "active",
+              "created": created.strftime("%Y-%m-%d %H:%M:%S"),
+              "expires": (created + timedelta(days=key_lifetime_days)
+                          ).strftime("%Y-%m-%d %H:%M:%S"),
+              "sealed": kdf_seal(json.dumps(material), kms_passphrase)}
+    key_store[name] = record
+    save_all()
+    log_action(name, "KMS generate: <<SIGNNAME>> key v%d" % record["version"])
+    print("generated %s key v%d for %s, expires %s"
+          % ("<<SIGNNAME>>", record["version"], name, record["expires"]))
+    return record
+
+
+def key_material(name):
+    # unseal on use; this is the only place the private half exists in memory
+    if name not in key_store:
+        key_generate(name)
+    record = key_store[name]
+    if record["status"] != "active":
+        raise PermissionError("the key for %s is %s" % (name, record["status"]))
+    return json.loads(kdf_open(record["sealed"], kms_passphrase))
+
+
+def key_distribute(name):
+    # only ever the public half leaves the service
+    if name not in key_store:
+        key_generate(name)
+    material = key_material(name)
+    public = {k: v for k, v in material.items() if k not in ("x", "private", "d")}
+    log_action(name, "KMS distribute: public key handed out")
+    print("distributed the PUBLIC key of", name, ":", short(public, 60))
+    return public
+
+
+def key_revoke(name, reason="compromised"):
+    if name not in key_store:
+        print("no key for", name)
+        return False
+    key_store[name]["status"] = "revoked"
+    key_store[name]["revoked_at"] = timestamp()
+    key_store[name]["reason"] = reason
+    save_all()
+    log_action(name, "KMS revoke: " + reason)
+    print("REVOKED the key of", name, "-", reason)
+    return True
+
+
+def key_renew(name):
+    # a new version replaces the old one; records signed earlier stay verifiable
+    # against the version that signed them, which is why the version is stored
+    old = key_store.get(name, {}).get("version", 0)
+    record = key_generate(name)
+    log_action(name, "KMS renew: v%d -> v%d" % (old, record["version"]))
+    return record
+
+
+def key_expired(name):
+    record = key_store.get(name)
+    return bool(record) and timestamp() > record["expires"]
+
+
+def key_rotate():
+    # the policy sweep: renew everything past its expiry date
+    rotated = [name for name in list(key_store) if key_expired(name)]
+    for name in rotated:
+        print("rotating", name, "- it expired at", key_store[name]["expires"])
+        key_renew(name)
+    if not rotated:
+        print("nothing to rotate; every key is inside its lifetime")
+    log_action("kms", "KMS rotate: %d key(s) renewed" % len(rotated))
+    return rotated
+
+
+def key_age_out(name):
+    # backdate an expiry, to demonstrate what the rotation sweep then does
+    if name in key_store:
+        key_store[name]["expires"] = (datetime.now() - timedelta(days=1)
+                                      ).strftime("%Y-%m-%d %H:%M:%S")
+        print(name, "expiry backdated to", key_store[name]["expires"])
+
+
+def show_keys():
+    print("%-10s %-4s %-9s %-20s %-20s %s"
+          % ("OWNER", "VER", "STATUS", "CREATED", "EXPIRES", "SEALED"))
+    for name, record in key_store.items():
+        print("%-10s v%-3d %-9s %-20s %-20s %s"
+              % (name, record["version"], record["status"], record["created"],
+                 record["expires"], record["sealed"]["body"][:16] + "..."))
+
+
+def get_signing_key(user):
+    # the rest of the program asks for a key the same way as before; the
+    # difference is that it now comes out of the KMS, unsealed on demand
+    return key_material(user)
+
+
+def signer_public(user):
+    # verification uses the stored key, and refuses a revoked one
+    if user in key_store:
+        if key_store[user]["status"] != "active":
+            raise PermissionError("the key for %s is %s"
+                                  % (user, key_store[user]["status"]))
+        return key_material(user)
+    if user in signer_keys:
+        # a public key that arrived over the network, from a party whose keys
+        # this service does not manage
+        return signer_keys[user]
+    raise KeyError("no key on file for " + user)
+'''
+
+BLOCK_LOGCHAIN = '''
+def log_action(who, what):
+    # A HASH-CHAINED log: every line carries the hash of the line before it,
+    # so removing or editing any entry breaks the chain from there on. This is
+    # the cheapest tamper-evident audit trail there is.
+    previous = "0" * 64
+    if os.path.exists(log_file):
+        existing = [line for line in open(log_file).read().split("\\n") if line.strip()]
+        if existing:
+            previous = existing[-1].rsplit("|", 1)[-1].strip()
+    entry = "%s | %s | %s" % (timestamp(), who, what)
+    digest = hashlib.sha256((previous + entry).encode()).hexdigest()
+    open(log_file, "a").write("%s | %s\\n" % (entry, digest))
+
+
+def show_log():
+    if not os.path.exists(log_file):
+        print("audit log is empty")
+        return
+    for line in open(log_file):
+        print(line.rstrip())
+
+
+def verify_log(path=None):
+    # recompute the chain and report the first line that does not fit
+    path = path or log_file
+    if not os.path.exists(path):
+        print("audit log is empty")
+        return True
+    previous = "0" * 64
+    number = 0
+    for number, line in enumerate(open(path), 1):
+        line = line.rstrip()
+        if not line:
+            continue
+        entry, _, stored = line.rpartition("|")
+        entry, stored = entry.strip(), stored.strip()
+        expected = hashlib.sha256((previous + entry).encode()).hexdigest()
+        if expected != stored:
+            print("AUDIT LOG BROKEN at line %d" % number)
+            print("   the entry was edited, or a line before it was removed")
+            return False
+        previous = stored
+    print("audit log intact:", number, "entries, chain verified")
+    return True
+
+
+def log_tamper_test():
+    # Prove the chain detects an edit WITHOUT damaging the real log: copy it,
+    # change one entry in the copy, and verify the copy.
+    if not os.path.exists(log_file):
+        print("audit log is empty")
+        return
+    rows = [line for line in open(log_file).read().split("\\n") if line.strip()]
+    if len(rows) < 2:
+        print("not enough entries to test the chain")
+        return
+    target = len(rows) // 2
+    entry, _, digest = rows[target].rpartition("|")
+    rows[target] = entry.replace("DENIED", "allowed") + "| " + digest.strip()
+    if rows[target] == entry + "| " + digest.strip():
+        rows[target] = entry.rstrip() + " (edited) | " + digest.strip()
+    copy_path = log_file + ".tampered"
+    open(copy_path, "w").write("\\n".join(rows) + "\\n")
+    print("edited entry %d in a COPY of the log, then re-verified it:" % (target + 1))
+    verify_log(copy_path)
+    os.remove(copy_path)
+    print("the real log is untouched:")
+    verify_log()
+'''
+
+BLOCK_HMAC = '''
+def hmac_tag(data):
+    # A KEYED hash. A plain digest proves nothing about WHO computed it - an
+    # attacker who changes the record can recompute the hash too. HMAC needs
+    # the shared key, so it gives integrity AND authenticity of origin.
+    if isinstance(data, str):
+        data = data.encode()
+    return hmac.new(integrity_key, data, hashlib.<<HMACALGO>>).hexdigest()
+
+
+def hmac_matches(data, stored_hex):
+    # compare_digest, never ==, so the comparison takes the same time
+    # whatever the input and cannot be attacked by timing it
+    return hmac.compare_digest(hmac_tag(data), stored_hex)
+'''
+
+BLOCK_REPLAY = '''
+def replay_seen(nonce):
+    return nonce in seen_nonces
+
+
+def replay_remember(nonce):
+    seen_nonces.append(nonce)
+    if len(seen_nonces) > replay_window:
+        del seen_nonces[0]
+
+
+def fresh_nonce():
+    return get_random_bytes(12).hex()
+
+
+def replay_check(record_id, nonce, stamp):
+    # Two different jobs. The NONCE stops the same message being replayed;
+    # the TIMESTAMP window stops an attacker holding a message back and
+    # submitting it much later. A signature alone prevents neither.
+    if replay_seen(nonce):
+        print("REJECTED:", record_id, "- this nonce was already used (replay)")
+        log_action("server", "REPLAY rejected " + record_id)
+        return False
+    age = (datetime.now() - datetime.strptime(stamp, "%Y-%m-%d %H:%M:%S")).total_seconds()
+    if abs(age) > replay_window_seconds:
+        print("REJECTED:", record_id, "- timestamp is %.0fs old, window is %ds"
+              % (age, replay_window_seconds))
+        log_action("server", "STALE rejected " + record_id)
+        return False
+    replay_remember(nonce)
+    return True
+'''
+
+ACCESS_BLOCKS = {
+"RBAC": '''
+def check_permission(subject, action):
+    # ROLE BASED ACCESS CONTROL
+    #   Access(User, Object) = exists Role : HasRole(User, Role) and
+    #                          CanAccess(Role, Object)
+    # One table, consulted before every operation.
+    if action not in roles.get(subject, []):
+        print("ACCESS DENIED:", subject, "cannot", action)
+        log_action(subject, "DENIED " + action)
+        return False
+    return True
+
+
+def show_policy():
+    print("%-12s %s" % ("ROLE", "ACTIONS IT MAY PERFORM"))
+    for role in roles:
+        print("%-12s %s" % (role, ", ".join(roles[role])))
+''',
+"DAC": '''
+def check_permission(subject, action):
+    # DISCRETIONARY ACCESS CONTROL
+    #   AccessMatrix[Subject, Object] = {Rights}
+    # The owner of an object decides who may touch it, so rights live in a
+    # matrix that can be changed at run time - see grant() and revoke_right().
+    rights = access_matrix.get(subject, {}).get(record_word, [])
+    if action not in rights:
+        print("ACCESS DENIED:", subject, "has no", action, "right on the",
+              record_word, "store")
+        log_action(subject, "DENIED " + action)
+        return False
+    return True
+
+
+def grant(owner, subject, action):
+    # the discretionary part: a subject that already holds a right may pass
+    # it on. This is exactly why DAC does not contain a leak.
+    if action not in access_matrix.get(owner, {}).get(record_word, []):
+        print("ACCESS DENIED:", owner, "cannot grant a right it lacks:", action)
+        return False
+    access_matrix.setdefault(subject, {}).setdefault(record_word, []).append(action)
+    log_action(owner, "granted %s to %s" % (action, subject))
+    print(owner, "granted", action, "to", subject)
+    return True
+
+
+def revoke_right(owner, subject, action):
+    rights = access_matrix.get(subject, {}).get(record_word, [])
+    if action in rights:
+        rights.remove(action)
+        log_action(owner, "revoked %s from %s" % (action, subject))
+        print(owner, "revoked", action, "from", subject)
+        return True
+    return False
+
+
+def show_policy():
+    print("%-12s %s" % ("SUBJECT", "RIGHTS ON THE " + record_word.upper() + " STORE"))
+    for subject in sorted(access_matrix):
+        print("%-12s %s" % (subject,
+                            ", ".join(access_matrix[subject].get(record_word, []))))
+''',
+"MAC": '''
+def check_permission(subject, action):
+    # MANDATORY ACCESS CONTROL
+    #   AccessGranted = (SubjectClearance >= ObjectClassification)
+    #                   and PolicyRuleSatisfied
+    # The levels are set by the system, not by any user - that is what makes
+    # it mandatory. The policy rule is the second half of the formula.
+    level = clearance.get(subject, 0)
+    needed = classification.get(action, 99)
+    policy_ok = action in roles.get(subject, [])
+    if level < needed:
+        print("ACCESS DENIED:", subject, "has clearance", level,
+              "but", action, "is classified", needed)
+        log_action(subject, "DENIED " + action + " (clearance)")
+        return False
+    if not policy_ok:
+        print("ACCESS DENIED:", subject, "is cleared for level", level,
+              "but policy does not grant", action)
+        log_action(subject, "DENIED " + action + " (policy)")
+        return False
+    return True
+
+
+def show_policy():
+    print("%-12s %s" % ("SUBJECT", "CLEARANCE"))
+    for subject in sorted(clearance):
+        print("%-12s %d" % (subject, clearance[subject]))
+    print()
+    print("%-18s %s" % ("ACTION", "CLASSIFICATION"))
+    for action in sorted(classification):
+        print("%-18s %d" % (action, classification[action]))
+''',
+"BLP": '''
+def check_permission(subject, action):
+    # BELL-LAPADULA
+    #   Simple Security Property :  S(Subject) >= C(Object)  for READ
+    #                               "no read up"
+    #   *-Property               :  S(Subject) <= C(Object)  for WRITE
+    #                               "no write down"
+    # The second rule is the surprising one: a highly cleared subject must
+    # NOT be able to write into a low classification, or it could copy secret
+    # data downwards.
+    level = clearance.get(subject, 0)
+    needed = classification.get(action, 99)
+    writing = action in WRITE_ACTIONS
+
+    if writing and level > needed:
+        print("ACCESS DENIED (*-property, no write down):", subject,
+              "at level", level, "may not write to level", needed)
+        log_action(subject, "DENIED " + action + " (no write down)")
+        return False
+    if not writing and level < needed:
+        print("ACCESS DENIED (simple security, no read up):", subject,
+              "at level", level, "may not read level", needed)
+        log_action(subject, "DENIED " + action + " (no read up)")
+        return False
+    if action not in roles.get(subject, []):
+        print("ACCESS DENIED:", subject, "is not assigned", action)
+        log_action(subject, "DENIED " + action)
+        return False
+    return True
+
+
+def show_policy():
+    print("WRITE actions (need S <= C):", ", ".join(sorted(WRITE_ACTIONS)))
+    print("READ  actions (need S >= C):",
+          ", ".join(sorted(a for a in classification if a not in WRITE_ACTIONS)))
+    for subject in sorted(clearance):
+        print("   %-12s level %d" % (subject, clearance[subject]))
+''',
+"ABAC": '''
+def check_permission(subject, action):
+    # ATTRIBUTE BASED ACCESS CONTROL
+    #   Access(User, Object, Environment) =
+    #       f(UserAttributes, ObjectAttributes, EnvironmentAttributes)
+    # Nothing is granted by name: the policy function weighs attributes, so a
+    # new user needs no new rule, only attributes.
+    user = user_attributes.get(subject, {})
+    obj = object_attributes.get(action, {})
+    environment = {"hour": datetime.now().hour, "channel": "tcp",
+                   "risk": environment_risk}
+    allowed, why = abac_policy(user, obj, environment, action)
+    if not allowed:
+        print("ACCESS DENIED:", subject, "-", why)
+        log_action(subject, "DENIED " + action + " (" + why + ")")
+        return False
+    return True
+
+
+def abac_policy(user, obj, environment, action):
+    # the policy function f, written out so every clause is visible
+    if action not in user.get("allowed", []):
+        return False, "the attribute set does not include " + action
+    if user.get("clearance", 0) < obj.get("sensitivity", 99):
+        return False, "clearance %d below sensitivity %d" % (
+            user.get("clearance", 0), obj.get("sensitivity", 99))
+    if obj.get("department") and user.get("department") != obj["department"]:
+        return False, "department %r may not touch %r data" % (
+            user.get("department"), obj["department"])
+    if environment["risk"] > user.get("max_risk", 1.0):
+        return False, "environment risk %.2f above the tolerated %.2f" % (
+            environment["risk"], user.get("max_risk", 1.0))
+    return True, "all attribute clauses satisfied"
+
+
+def show_policy():
+    for subject in sorted(user_attributes):
+        print("   %-12s %s" % (subject, user_attributes[subject]))
+''',
+"TIME": '''
+def check_permission(subject, action):
+    # TIME BASED ACCESS CONTROL
+    #   Access(User, Object, Time) = (Time >= StartTime)
+    #                                and (Time <= EndTime)
+    #                                and OtherConditions
+    # This is how a DRM licence or a limited-time contractor account works:
+    # the grant expires on its own, with nothing to remember to revoke.
+    now = timestamp()
+    grant = time_grants.get(subject)
+    if not grant:
+        print("ACCESS DENIED:", subject, "holds no time grant")
+        log_action(subject, "DENIED " + action + " (no grant)")
+        return False
+    if action not in grant["actions"]:
+        print("ACCESS DENIED:", subject, "grant does not cover", action)
+        log_action(subject, "DENIED " + action)
+        return False
+    if now < grant["from"]:
+        print("ACCESS DENIED:", subject, "grant starts at", grant["from"])
+        log_action(subject, "DENIED " + action + " (too early)")
+        return False
+    if now > grant["to"]:
+        print("ACCESS DENIED:", subject, "grant EXPIRED at", grant["to"])
+        log_action(subject, "DENIED " + action + " (expired)")
+        return False
+    return True
+
+
+def issue_grant(subject, actions, minutes=60):
+    # a licence that expires by itself
+    start = datetime.now()
+    time_grants[subject] = {
+        "actions": list(actions),
+        "from": start.strftime("%Y-%m-%d %H:%M:%S"),
+        "to": (start + timedelta(minutes=minutes)).strftime("%Y-%m-%d %H:%M:%S")}
+    log_action(subject, "grant issued for %d minutes" % minutes)
+    print("grant issued to", subject, "until", time_grants[subject]["to"])
+
+
+def expire_grant(subject):
+    # backdate the window, to demonstrate what an expired licence looks like
+    if subject in time_grants:
+        past = datetime.now() - timedelta(minutes=120)
+        time_grants[subject]["from"] = (past - timedelta(minutes=60)).strftime(
+            "%Y-%m-%d %H:%M:%S")
+        time_grants[subject]["to"] = past.strftime("%Y-%m-%d %H:%M:%S")
+        print(subject, "grant backdated - it is now expired")
+
+
+def show_policy():
+    for subject in sorted(time_grants):
+        grant = time_grants[subject]
+        live = grant["from"] <= timestamp() <= grant["to"]
+        print("   %-12s %s .. %s  %s" % (subject, grant["from"][11:],
+                                         grant["to"][11:],
+                                         "live" if live else "EXPIRED"))
+''',
+"PROB": '''
+def check_permission(subject, action):
+    # PROBABILISTIC ACCESS CONTROL
+    #   P(Access Granted | Conditions) =
+    #       f(UserTrustLevel, ObjectSensitivity, EnvironmentRisk)
+    # The score is computed, not rolled: the same conditions always give the
+    # same answer, which is what makes the decision auditable.
+    probability = access_probability(subject, action)
+    if probability < access_threshold:
+        print("ACCESS DENIED:", subject, "scored %.2f for %s, threshold %.2f"
+              % (probability, action, access_threshold))
+        log_action(subject, "DENIED %s (p=%.2f)" % (action, probability))
+        return False
+    log_action(subject, "allowed %s (p=%.2f)" % (action, probability))
+    return True
+
+
+def access_probability(subject, action):
+    # f: trust raises it, sensitivity and environment risk lower it, and an
+    # action the subject was never assigned is capped hard
+    trust = trust_level.get(subject, 0.0)
+    sensitivity = action_sensitivity.get(action, 1.0)
+    score = trust * (1.0 - sensitivity) * (1.0 - environment_risk)
+    if action not in roles.get(subject, []):
+        score *= 0.25
+    return round(min(max(score, 0.0), 1.0), 2)
+
+
+def show_policy():
+    print("%-12s %-18s %s" % ("SUBJECT", "ACTION", "P(grant)"))
+    for subject in sorted(trust_level):
+        for action in sorted(action_sensitivity):
+            probability = access_probability(subject, action)
+            print("%-12s %-18s %.2f %s" % (subject, action, probability,
+                                           "allow" if probability >= access_threshold
+                                           else "deny"))
+''',
+}
 
 BLOCK_RBAC = '''
 def check_permission(role, action):
@@ -1107,7 +2171,11 @@ def block_client(cfg):
         L += ['', '    wrapped = wrap_key(session_key, server_public)   # pre-shared, nothing to wrap']
     L += ['',
           '    # 5 <<SIGNNAME>> signature over the digest: authenticity + non-repudiation',
-          '    signing_key = get_signing_key(user)',
+          '    try:',
+          '        signing_key = get_signing_key(user)',
+          '    except PermissionError as exc:',
+          '        print("CANNOT SUBMIT:", exc)      # revoked or suspended key',
+          '        return None',
           '    signature = sign_hash(digest, signing_key)',
           '    print("Output <<SIGNNAME>> signature:", sig_text(signature))']
     if cfg["he"] != "NONE":
@@ -1125,6 +2193,16 @@ def block_client(cfg):
               '    print("Timestamp:", stamp)']
     else:
         L += ['', '    stamp = when or timestamp()']
+    if cfg["hmac"]:
+        L += ['',
+              '    # a keyed tag as well as the digest: integrity AND origin',
+              '    mac = hmac_tag(body)',
+              '    print("Output HMAC-<<HMACALGO>> tag:", mac)']
+    if cfg["replay"]:
+        L += ['',
+              '    # a one-time nonce, so this exact submission cannot be replayed',
+              '    nonce = fresh_nonce()',
+              '    print("Output nonce:", nonce)']
     L += ['',
           '    records[record_id] = {',
           '        "user": user,',
@@ -1140,6 +2218,10 @@ def block_client(cfg):
             L += ['        "packed_ct": str(packed_ct),']
         elif cfg["he"] == "ELGAMAL_MUL":
             L[-1] = '        "value_ct": [str(value_ct[0]), str(value_ct[1])],'
+    if cfg["hmac"]:
+        L += ['        "mac": mac,']
+    if cfg["replay"]:
+        L += ['        "nonce": nonce,']
     L += ['        "timestamp": stamp,',
           '        "status": "submitted"',
           '    }']
@@ -1174,8 +2256,17 @@ def block_server(cfg):
           '        print("no such <<REC>>:", record_id)',
           '        return False',
           '',
-          '    row = records[record_id]',
-          '',
+          '    row = records[record_id]']
+    if cfg["replay"]:
+        L += ['',
+              '    # only on first receipt - re-verifying a stored record is',
+              '    # not a replay',
+              '    if row["status"] == "submitted" and not replay_check(',
+              '            record_id, row["nonce"], row["timestamp"]):',
+              '        row["status"] = "rejected (replay)"',
+              '        save_all()',
+              '        return False']
+    L += ['',
           '    # 1 unwrap the session key with the private key',
           '    session_key = unwrap_key(bytes.fromhex(row["wrapped_key"]), server_private)']
     if cfg["wrap"] != "NONE":
@@ -1190,13 +2281,25 @@ def block_server(cfg):
           '    print("Decrypted <<REC>>:", body or "<unreadable, padding broken>")',
           '',
           '    # 3 verify the signature with the submitter public key',
-          '    sig_ok = verify_hash(row["hash"], row["signature"], signer_keys[row["user"]])',
+          '    try:',
+          '        sig_ok = verify_hash(row["hash"], row["signature"],',
+          '                             signer_public(row["user"]))',
+          '    except PermissionError as exc:',
+          '        print("Output: cannot verify -", exc)      # revoked or suspended key',
+          '        sig_ok = False',
           '    print("Output: <<SIGNNAME>> signature", "valid" if sig_ok else "INVALID")',
           '',
           '    # 4 recompute the hash and compare',
           '    hash_ok = hash_matches(body, row["hash"])',
           '    print("Output: recomputed <<HASHNAME>>",',
           '          "matches stored hash" if hash_ok else "DOES NOT MATCH")']
+    if cfg["hmac"]:
+        L += ['',
+              '    # the keyed tag: whoever edited the record could recompute',
+              '    # the plain digest, but not this',
+              '    mac_ok = hmac_matches(body, row["mac"])',
+              '    print("Output: HMAC tag", "valid" if mac_ok else "INVALID")',
+              '    hash_ok = hash_ok and mac_ok']
     if cfg["timestamps"]:
         L += ['',
               '    # 5 check the timestamp against the allowed window',
@@ -1407,7 +2510,7 @@ def block_net(cfg):
     L += ['    sock = socket.create_connection((host, port), timeout=10)',
           '    payload = {"record_id": record_id,',
           '               "envelope": records[record_id],',
-          '               "signer_key": signer_keys[user]}']
+          '               "signer_key": get_signing_key(user)}']
     if cfg["search"] != "NONE":
         L += ['    payload["index"] = fresh']
         if cfg["search"] == "PKSE":
@@ -1499,22 +2602,61 @@ def block_menu(cfg):
               '            return',
               '',
               '']
+    auditor_items = ['1 Hashes and signatures', '2 Audit log',
+                     '3 Access control policy']
+    if cfg["log_chain"]:
+        auditor_items.append('4 Verify the log chain')
+    auditor_items.append('%d Back' % (len(auditor_items) + 1))
     L += ['def auditor_menu():',
           '    while True:',
-          '        print("\\n<<AUDITORROLE>> MENU: 1 Hashes and signatures | 2 Audit log | 3 Back")',
+          '        print("\\n<<AUDITORROLE>> MENU: ' + " | ".join(auditor_items) + '")',
           '        choice = input("Input Choice: ").strip()',
           '        if choice == "1":',
           '            show_hashes()',
           '        elif choice == "2":',
           '            show_log()',
           '        elif choice == "3":',
-          '            return',
-          '',
-          '']
+          '            show_policy()']
+    if cfg["log_chain"]:
+        L += ['        elif choice == "4":',
+              '            verify_log()',
+              '        elif choice == "5":',
+              '            return']
+    else:
+        L += ['        elif choice == "4":',
+              '            return']
+    L += ['', '']
+    if cfg["kms"]:
+        L += ['def kms_menu():',
+              '    while True:',
+              '        print("\\nKEY MANAGEMENT MENU: 1 List | 2 Generate"',
+              '              " | 3 Distribute public key | 4 Revoke | 5 Renew"',
+              '              " | 6 Rotate expired | 7 Back")',
+              '        choice = input("Input Choice: ").strip()',
+              '        if choice == "1":',
+              '            show_keys()',
+              '        elif choice == "2":',
+              '            key_generate(input("Owner: ").strip() or "alice")',
+              '        elif choice == "3":',
+              '            key_distribute(input("Owner: ").strip() or "alice")',
+              '        elif choice == "4":',
+              '            key_revoke(input("Owner: ").strip() or "alice",',
+              '                       input("Reason: ").strip() or "compromised")',
+              '        elif choice == "5":',
+              '            key_renew(input("Owner: ").strip() or "alice")',
+              '        elif choice == "6":',
+              '            key_rotate()',
+              '        elif choice == "7":',
+              '            return',
+              '',
+              '']
     main_items = ['1 <<CLIENTROLE>>', '2 <<SERVERROLE>>']
     if cfg["he"] != "NONE":
         main_items.append('3 <<ANALYSTROLE>>')
-    main_items += ['4 <<AUDITORROLE>>', '5 Exit']
+    main_items.append('4 <<AUDITORROLE>>')
+    if cfg["kms"]:
+        main_items.append('5 Key management')
+    main_items.append('%d Exit' % (6 if cfg["kms"] else 5))
     L += ['def menu():',
           '    while True:',
           '        print("\\n" + system_name.upper())',
@@ -1528,11 +2670,18 @@ def block_menu(cfg):
         L += ['        elif choice == "3":',
               '            analyst_menu()']
     L += ['        elif choice == "4":',
-          '            auditor_menu()',
-          '        elif choice == "5":',
-          '            print("Exit")',
-          '            return',
-          '        else:',
+          '            auditor_menu()']
+    if cfg["kms"]:
+        L += ['        elif choice == "5":',
+              '            kms_menu()',
+              '        elif choice == "6":',
+              '            print("Exit")',
+              '            return']
+    else:
+        L += ['        elif choice == "5":',
+              '            print("Exit")',
+              '            return']
+    L += ['        else:',
           '            print("invalid choice")',
           '']
     return "\n".join(L) + "\n"
@@ -1586,11 +2735,39 @@ def block_demo(cfg):
         L += ['']
     L += ['    print("\\n--- <<AUDITORROLE>>: integrity data only ---")',
           '    show_hashes()',
-          '',
-          '    print("\\n--- ACCESS CONTROL ---")',
-          '    check_permission(auditor_role, "submit")',
-          '    check_permission(client_role, "view_all")',
           '']
+    L += block_access_demo(cfg)
+    L += ['']
+    if cfg["kms"]:
+        L += ['    print("\\n--- KEY MANAGEMENT ---")',
+              '    show_keys()',
+              '    print()',
+              '    key_distribute("alice")',
+              '    key_renew("alice")',
+              '    key_age_out("bob")',
+              '    key_rotate()',
+              '    key_revoke("carol", "laptop stolen")',
+              '    print()',
+              '    print("a <<REC>> signed by a revoked key can no longer be verified:")',
+              '    verify_record("R003")',
+              '    print()',
+              '    print("recovery after a compromise: issue a replacement key")',
+              '    key_renew("carol")',
+              '    print()',
+              '    show_keys()',
+              '']
+    if cfg["replay"]:
+        L += ['    print("\\n--- REPLAY PROTECTION ---")',
+              '    replayed = dict(records["R001"])',
+              '    replayed["status"] = "submitted"      # the same envelope again',
+              '    records["R001_again"] = replayed',
+              '    verify_record("R001_again")',
+              '']
+    if cfg["log_chain"]:
+        L += ['    print("\\n--- AUDIT LOG CHAIN ---")',
+              '    verify_log()',
+              '    log_tamper_test()',
+              '']
     if cfg["sockets"]:
         L += ['    print("\\n--- CLIENT-SERVER over TCP ---")',
               '    netdemo()',
@@ -1601,6 +2778,12 @@ def block_demo(cfg):
           '    print("demonstration finished")',
           '',
           '']
+    return "\n".join(L) + "\n"
+
+
+def block_reset(cfg):
+    """reset() on its own - every role dispatches it, so every role gets it."""
+    L = []
     files = ['record_file', 'key_file', 'log_file']
     extra = []
     if cfg["search"] != "NONE":
@@ -1609,9 +2792,14 @@ def block_demo(cfg):
         extra += ['"pkse_key.json"', '"numbers.json"']
     if cfg["he"] != "NONE":
         extra.append('"he_key.json"')
-    if cfg["wrap"] != "NONE":
+    if cfg["wrap"] in ("RSA", "ECC"):
         extra += ['"server_private.pem"', '"server_public.pem"']
-    L += ['def reset():',
+    if cfg["wrap"] in ("ELGAMAL", "RABIN", "DH"):
+        extra.append('"server_key.json"')
+    if cfg["kms"]:
+        extra.append('"kms_keys.json"')
+    L += ['',
+          'def reset():',
           '    for path in [' + ", ".join(files + extra) + ']:',
           '        try:',
           '            if os.path.exists(path):',
@@ -1623,7 +2811,58 @@ def block_demo(cfg):
     return "\n".join(L) + "\n"
 
 
-def block_startup(cfg):
+def block_access_demo(cfg):
+    """Demonstrate the rule that makes the chosen model different from RBAC."""
+    f = access_facts(cfg)
+    model = cfg["access"]
+    low, high = f["lowest"], f["highest"]
+    reach, mine = f["high_action"], f["own_action"]
+    L = ['    print("\\n--- ACCESS CONTROL: %s ---")' % ACCESS_LABEL[model],
+         '    show_policy()',
+         '    print()']
+
+    if model == "DAC":
+        L += ['    # the discretionary part: a right is handed over, then taken back',
+              '    check_permission("%s", "%s")' % (low, reach),
+              '    grant("%s", "%s", "%s")' % (high, low, reach),
+              '    check_permission("%s", "%s")' % (low, reach),
+              '    revoke_right("%s", "%s", "%s")' % (high, low, reach),
+              '    check_permission("%s", "%s")' % (low, reach)]
+    elif model == "MAC":
+        L += ['    # clearance too low, then cleared AND inside the policy',
+              '    check_permission("%s", "%s")' % (low, reach),
+              '    print("allowed:", check_permission("%s", "%s"))' % (low, mine)]
+    elif model == "BLP":
+        writes = f["writes"] or ["submit"]
+        L += ['    # simple security property: no reading above your own level',
+              '    check_permission("%s", "%s")' % (low, reach),
+              '    # *-property: a highly cleared subject may not write downwards',
+              '    check_permission("%s", "%s")' % (high, writes[0]),
+              '    print("allowed:", check_permission("%s", "%s"))' % (low, mine)]
+    elif model == "ABAC":
+        L += ['    # the policy function reports which clause failed',
+              '    check_permission("%s", "%s")' % (low, reach),
+              '    print("allowed:", check_permission("%s", "%s"))' % (low, mine)]
+    elif model == "TIME":
+        L += ['    print("allowed while the grant is live:",',
+              '          check_permission("%s", "%s"))' % (low, mine),
+              '    expire_grant("%s")' % low,
+              '    check_permission("%s", "%s")' % (low, mine),
+              '    issue_grant("%s", %s, minutes=60)' % (low, repr(cfg["roles"][low])),
+              '    print("allowed again on a fresh grant:",',
+              '          check_permission("%s", "%s"))' % (low, mine)]
+    elif model == "PROB":
+        L += ['    # the score is computed, never rolled, so it is repeatable',
+              '    check_permission("%s", "%s")' % (low, reach),
+              '    print("allowed:", check_permission("%s", "%s"))' % (low, mine)]
+    else:
+        L += ['    check_permission("%s", "%s")' % (high, mine),
+              '    check_permission("%s", "%s")' % (low, reach),
+              '    print("allowed:", check_permission("%s", "%s"))' % (low, mine)]
+    return L
+
+
+def block_startup(cfg, role="combined"):
     L = ['if len(sys.argv) > 1 and sys.argv[1] == "reset":',
          '    reset()',
          '    sys.exit(0)',
@@ -1634,24 +2873,50 @@ def block_startup(cfg):
     if cfg["search"] == "PKSE":
         L += ['pkse_key = pkse_keygen()']
     L += ['server_private, server_public = server_keys()']
-    if cfg["he"] != "NONE":
+    if cfg["he"] != "NONE" and role != "server":
         L += ['he_pub = he_keygen()',
               'he_secret = he_pub.pop("secret")      # the piece that must stay private']
-    L += ['',
-          'if __name__ == "__main__":',
-          '    arg = sys.argv[1] if len(sys.argv) > 1 else ""',
-          '    if arg == "demo":',
-          '        demo()']
-    if cfg["sockets"]:
-        L += ['    elif arg == "netdemo":',
-              '        netdemo()',
-              '    elif arg == "server":',
+    if role == "server":
+        L += ['',
+              'if __name__ == "__main__":',
+              '    # the server half: listen, and process whatever arrives',
+              '    print(system_name, "- server. Ctrl+C to stop.")',
+              '    try:',
               '        run_server()',
-              '    elif arg == "client":',
-              '        run_client(*sys.argv[2:])']
-    L += ['    else:',
-          '        menu()',
-          '']
+              '    except KeyboardInterrupt:',
+              '        print("\\nserver stopped")',
+              '']
+    elif role == "client":
+        L += ['',
+              'if __name__ == "__main__":',
+              '    # the client half: build one <<REC>> and send it over TCP',
+              '    given = sys.argv[1:]',
+              '    if len(given) >= 4:',
+              '        run_client(given[0], given[1], given[2], given[3])',
+              '    else:',
+              '        print(system_name, "- client")',
+              '        who = input("User name: ").strip() or "alice"',
+              '        which = input("<<RECCAP>> ID: ").strip() or "R001"',
+              '        amount = input("<<VAL>> (a number): ").strip() or "1"',
+              '        where = input("<<TAG>>: ").strip() or "101"',
+              '        run_client(who, which, amount, where)',
+              '']
+    else:
+        L += ['',
+              'if __name__ == "__main__":',
+              '    arg = sys.argv[1] if len(sys.argv) > 1 else ""',
+              '    if arg == "demo":',
+              '        demo()']
+        if cfg["sockets"]:
+            L += ['    elif arg == "netdemo":',
+                  '        netdemo()',
+                  '    elif arg == "server":',
+                  '        run_server()',
+                  '    elif arg == "client":',
+                  '        run_client(*sys.argv[2:])']
+        L += ['    else:',
+              '        menu()',
+              '']
     return "\n".join(L) + "\n"
 
 
@@ -1666,8 +2931,8 @@ def role_named(cfg, action, fallback):
     return fallback
 
 
-def build_source(cfg):
-    parts = [block_head(cfg)]
+def build_source(cfg, role="combined"):
+    parts = [block_head(cfg, role)]
 
     roles_const = ['client_role = "%s"' % role_named(cfg, "submit", "client"),
                    'server_role = "%s"' % role_named(cfg, "verify", "server")]
@@ -1681,8 +2946,13 @@ def build_source(cfg):
     parts.append(NEW_KEY_DES3 if cfg["cipher"] == "3DES" else NEW_KEY_PLAIN)
     parts.append(ED_BODIES[cfg["mode"]])
     parts.append(banner("Wrapping the session key with a public key"))
-    parts.append({"RSA": WRAP_RSA, "ECC": WRAP_ECC, "NONE": WRAP_NONE}[cfg["wrap"]])
-    parts.append(banner("Hashing (Hash)") + BLOCK_HASH)
+    parts.append({"RSA": WRAP_RSA, "ECC": WRAP_ECC, "ELGAMAL": WRAP_ELGAMAL,
+                  "RABIN": WRAP_RABIN, "DH": WRAP_DH,
+                  "NONE": WRAP_NONE}[cfg["wrap"]])
+    hash_block = BLOCK_HASH
+    if cfg["hash"] == "custom":
+        hash_block = BLOCK_CUSTOM_HASH + BLOCK_HASH
+    parts.append(banner("Hashing (Hash)") + hash_block)
     parts.append(banner("Digital signature (DSS)") + SIGN_BLOCKS[cfg["sign"]])
     if cfg["he"] != "NONE":
         parts.append(banner("Partial homomorphic encryption") + HE_BLOCKS[cfg["he"]])
@@ -1692,7 +2962,12 @@ def build_source(cfg):
         parts.append(banner("Searchable encryption (Search)"))
         parts.append(SEARCH_SSE if cfg["search"] == "SSE" else SEARCH_PKSE)
         parts.append(SEARCH_COMMON)
-    parts.append(banner("Audit log") + BLOCK_AUDIT)
+    parts.append(banner("Audit log") + (BLOCK_LOGCHAIN if cfg["log_chain"]
+                                        else BLOCK_AUDIT))
+    if cfg["hmac"]:
+        parts.append(banner("Keyed integrity (HMAC)") + BLOCK_HMAC)
+    if cfg["replay"]:
+        parts.append(banner("Replay and staleness protection") + BLOCK_REPLAY)
 
     save_extra, load_globals, load_extra = "", "", ""
     if cfg["search"] != "NONE":
@@ -1705,29 +2980,48 @@ def build_source(cfg):
         load_globals += ", id_of_number"
         load_extra += ('    if os.path.exists("numbers.json"):\n'
                        '        id_of_number = json.load(open("numbers.json"))\n')
+    if cfg["kms"]:
+        save_extra += '    json.dump(key_store, open("kms_keys.json", "w"), indent=2)\n'
+        load_globals += ", key_store"
+        load_extra += ('    if os.path.exists("kms_keys.json"):\n'
+                       '        key_store = json.load(open("kms_keys.json"))\n')
     store = (BLOCK_STORE.replace("<<SAVE_EXTRA>>", save_extra.rstrip("\n"))
              .replace("<<LOAD_GLOBALS>>", load_globals)
              .replace("<<LOAD_EXTRA>>", load_extra.rstrip("\n")))
     parts.append(banner("Saving and loading") + store)
-    parts.append(banner("Access control") + BLOCK_RBAC)
-    parts.append(banner("Client side: build and submit") + "\n" + block_client(cfg))
-    parts.append(banner("Server side: verify") + "\n" + block_server(cfg))
-    agg = block_agg(cfg)
-    if agg:
-        parts.append(banner("Aggregation and reveal") + "\n" + agg)
-    parts.append(banner("Views") + BLOCK_VIEWS)
+    if cfg["kms"]:
+        parts.append(banner("Key management service") + BLOCK_KMS)
+    else:
+        parts.append(BLOCK_GET_KEY)
+    parts.append(banner("Access control: " + ACCESS_LABEL[cfg["access"]])
+                 + ACCESS_BLOCKS[cfg["access"]])
+    half = role in ("server", "client")
+    if role != "server":
+        parts.append(banner("Client side: build and submit") + "\n" + block_client(cfg))
+    if role != "client":
+        parts.append(banner("Server side: verify") + "\n" + block_server(cfg))
+    if not half:
+        agg = block_agg(cfg)
+        if agg:
+            parts.append(banner("Aggregation and reveal") + "\n" + agg)
+        parts.append(banner("Views") + BLOCK_VIEWS)
     net = block_net(cfg)
     if net:
         parts.append(banner("Client-Server over TCP") + "\n" + net)
-    parts.append(banner("Menus") + "\n" + block_menu(cfg))
-    parts.append(banner("Full run with no typing") + "\n" + block_demo(cfg))
-    parts.append(banner("Start up") + "\n" + block_startup(cfg))
+    if not half:
+        parts.append(banner("Menus") + "\n" + block_menu(cfg))
+        parts.append(banner("Full run with no typing") + "\n" + block_demo(cfg))
+    # reset() belongs to every role: the combined file dispatches "reset" too
+    parts.append(block_reset(cfg))
+    parts.append(banner("Start up") + "\n" + block_startup(cfg, role))
 
     text = "\n".join(parts)
     text = text.replace("<<SIGNNAME>>", SIGN_LABEL[cfg["sign"]])
-    text = text.replace("<<WRAPNAME>>", cfg["wrap"] + "-" + str(cfg["rsa_bits"])
-                        if cfg["wrap"] == "RSA" else "<<WRAPNAME>>")
-    text = text.replace("<<WRAPNAME>>", "ECC P-256" if cfg["wrap"] == "ECC" else "the shared key")
+    wrap_name = {"RSA": "RSA-" + str(cfg["rsa_bits"]), "ECC": "ECC P-256",
+                 "ELGAMAL": "ElGamal", "RABIN": "Rabin",
+                 "DH": "a Diffie-Hellman shared key",
+                 "NONE": "the pre-shared key"}[cfg["wrap"]]
+    text = text.replace("<<WRAPNAME>>", wrap_name)
     text = text.replace("<<SEARCHNAME>>", cfg["search"])
     text = text.replace("<<CLIENTROLE>>", role_named(cfg, "submit", "client").upper())
     text = text.replace("<<SERVERROLE>>", role_named(cfg, "verify", "server").upper())
@@ -1743,24 +3037,41 @@ def build_source(cfg):
 # WRITING THE TWO OUTPUT FILES
 # ===========================================================================
 
-def strip_comments(source):
-    # Removes the teaching comments but KEEPS the section banners, so the
-    # clean file still reads like a structured answer.
+def strip_comments(source, keep_banners=True, max_blank=2):
+    # Removes the teaching comments. With keep_banners the section headings
+    # survive, so the clean file still reads like a structured answer; the
+    # separate client and server files are built with keep_banners=False to
+    # be as short as possible.
     try:
         tokens = list(tokenize.generate_tokens(io.StringIO(source).readline))
     except tokenize.TokenError:
         return source
+    source_lines = source.split("\n")
     out = []
     last_row, last_col = -1, 0
+    skip_newline = False
     for tok in tokens:
         srow, scol = tok.start
         if srow > last_row:
             last_col = 0
+        banner = tok.string.startswith(("# ----------", "# ====="))
+        dropping = tok.type == tokenize.COMMENT and not (keep_banners and banner)
+        if dropping:
+            # a comment that was the only thing on its line takes the whole
+            # line with it, rather than leaving a blank behind
+            before = source_lines[srow - 1][:scol] if srow - 1 < len(source_lines) else ""
+            if before.strip() == "":
+                skip_newline = True
+                last_row, last_col = tok.end
+                continue
+        if skip_newline and tok.type in (tokenize.NL, tokenize.NEWLINE):
+            skip_newline = False
+            last_row, last_col = tok.end
+            continue
+        skip_newline = False
         if scol > last_col:
             out.append(" " * (scol - last_col))
-        if tok.type == tokenize.COMMENT and not tok.string.startswith(("# ----------", "# =====")):
-            pass                        # drop this comment, keep its newline token
-        else:
+        if not dropping:
             out.append(tok.string)
         last_row, last_col = tok.end
     lines = [line.rstrip() for line in "".join(out).split("\n")]
@@ -1768,12 +3079,145 @@ def strip_comments(source):
     for line in lines:
         if line.strip() == "":
             blanks += 1
-            if blanks > 2:
+            if blanks > max_blank:
                 continue
         else:
             blanks = 0
         cleaned.append(line)
     return "\n".join(cleaned).strip("\n") + "\n"
+
+
+def prune_unused(source):
+    """Drop every top-level function and class that nothing reaches.
+
+    The client file and the server file are assembled from the same tested
+    blocks as the full answer, so each arrives carrying helpers its own half
+    never calls. Rather than maintain a second set of templates - which would
+    drift out of step - the unused definitions are removed here by following
+    references from the code that actually runs, repeatedly, until nothing
+    new is reached.
+    """
+    tree = ast.parse(source)
+
+    defs = {}
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            defs[node.name] = node
+
+    def names_in(nodes):
+        found = set()
+        for node in nodes:
+            for inner in ast.walk(node):
+                if isinstance(inner, ast.Name):
+                    found.add(inner.id)
+                elif isinstance(inner, ast.Attribute):
+                    found.add(inner.attr)
+        return found
+
+    # everything that runs by itself: settings, state, start-up, __main__
+    live = names_in([n for n in tree.body if not isinstance(
+        n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))])
+
+    reached = set()
+    while True:
+        new = {name for name in live if name in defs and name not in reached}
+        if not new:
+            break
+        reached |= new
+        for name in new:
+            live |= names_in([defs[name]])
+
+    drop = [node for name, node in defs.items() if name not in reached]
+    lines = source.split("\n")
+    remove = set()
+    for node in drop:
+        start = min([d.lineno for d in getattr(node, "decorator_list", [])]
+                    + [node.lineno]) - 1
+        # take the comment block sitting directly above the definition too
+        while start > 0 and lines[start - 1].lstrip().startswith("#"):
+            start -= 1
+        for index in range(start, node.end_lineno):
+            remove.add(index)
+    text = "\n".join(line for index, line in enumerate(lines) if index not in remove)
+    ast.parse(text)                     # never hand over something broken
+    return _prune_bindings(text)
+
+
+def _is_literal(node):
+    """True when an expression cannot possibly have a side effect."""
+    allowed = (ast.Constant, ast.Tuple, ast.List, ast.Dict, ast.Set, ast.BinOp,
+               ast.UnaryOp, ast.Load, ast.operator, ast.unaryop)
+    return all(isinstance(inner, allowed) for inner in ast.walk(node))
+
+
+def _prune_bindings(source):
+    """Remove imports nothing uses, and settings nothing reads.
+
+    Only bindings whose value is a plain literal are dropped, so nothing with
+    a side effect is ever removed. Runs to a fixed point, because dropping a
+    setting can make an import unnecessary too.
+    """
+    for _ in range(6):
+        tree = ast.parse(source)
+        used = set()
+        for node in tree.body:
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                continue
+            if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                    and isinstance(node.targets[0], (ast.Name, ast.Tuple))
+                    and _is_literal(node.value)):
+                for inner in ast.walk(node.value):   # the value still counts
+                    if isinstance(inner, ast.Name):
+                        used.add(inner.id)
+                continue
+            for inner in ast.walk(node):
+                if isinstance(inner, ast.Name):
+                    used.add(inner.id)
+                elif isinstance(inner, ast.Attribute):
+                    used.add(inner.attr)
+
+        lines = source.split("\n")
+        remove, rewrite = set(), {}
+        for node in tree.body:
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                keep = [alias for alias in node.names
+                        if (alias.asname or alias.name.split(".")[0]) in used]
+                if not keep:
+                    for index in range(node.lineno - 1, node.end_lineno):
+                        remove.add(index)
+                elif len(keep) != len(node.names):
+                    names = ", ".join(
+                        a.name + (" as " + a.asname if a.asname else "") for a in keep)
+                    rewrite[node.lineno - 1] = (
+                        ("from %s import %s" % (node.module, names))
+                        if isinstance(node, ast.ImportFrom) else "import " + names)
+                    for index in range(node.lineno, node.end_lineno):
+                        remove.add(index)
+            elif (isinstance(node, ast.Assign) and len(node.targets) == 1
+                  and _is_literal(node.value)):
+                target = node.targets[0]
+                names = ([target.id] if isinstance(target, ast.Name)
+                         else [e.id for e in getattr(target, "elts", [])
+                               if isinstance(e, ast.Name)])
+                if names and not any(name in used for name in names):
+                    for index in range(node.lineno - 1, node.end_lineno):
+                        remove.add(index)
+
+        if not remove and not rewrite:
+            break
+        kept = []
+        for index, line in enumerate(lines):
+            if index in rewrite:
+                kept.append(rewrite[index])
+            elif index not in remove:
+                kept.append(line)
+        candidate = "\n".join(kept)
+        try:
+            ast.parse(candidate)
+        except SyntaxError:
+            break
+        source = candidate
+    return source
 
 
 def write_pair(cfg, quiet=False):
@@ -1791,14 +3235,42 @@ def write_pair(cfg, quiet=False):
         clean = source                  # never hand over a broken file
     open(clean_path, "w", encoding="utf-8").write(clean)
 
+    # When the question has a client-server component, also write the two
+    # halves as SEPARATE standalone programs, for an examiner who wants a
+    # client and a server as two files in two terminals. They share no code
+    # with each other and nothing is imported: each one is the whole answer
+    # with a different entry point.
+    extra = []
+    if cfg["sockets"] and cfg.get("split", True):
+        for role in ("server", "client"):
+            path = "%s_%s.py" % (cfg["out"], role)
+            text = build_source(cfg, role)
+            # each half is assembled from the same blocks, then everything it
+            # does not reach is removed and every comment stripped, so what is
+            # left is only the code that runs
+            try:
+                lean = strip_comments(prune_unused(text), keep_banners=False,
+                                      max_blank=1)
+                ast.parse(lean)
+            except Exception:
+                lean = text             # never hand over a broken file
+            open(path, "w", encoding="utf-8").write(lean)
+            extra.append((path, lean))
+
     if not quiet:
         print()
         print("written:", main_path, "(%d lines, with comments)" % source.count("\n"))
         print("written:", clean_path, "(%d lines, comments stripped)" % clean.count("\n"))
+        for path, text in extra:
+            print("written:", path, "(%d lines, the %s half, no comments)"
+                  % (text.count("\n"), path.rsplit("_", 1)[1][:-3]))
         print()
         print("NEXT:")
         print("   python %s demo        full run, no typing" % main_path)
         print("   python %s             the menu  <- show this to the examiner" % main_path)
+        if extra:
+            print("   python %s_server.py   terminal 1  }  the same answer split" % cfg["out"])
+            print("   python %s_client.py   terminal 2  }  into two programs" % cfg["out"])
         print("   python %s reset       clear the stored files" % main_path)
     return main_path, clean_path
 
@@ -1881,9 +3353,30 @@ def wizard():
     cfg["search"] = ask(" searchable encryption", cfg["search"], SEARCHES)
 
     print()
+    print("--- access control: Lab 4 lists seven models ---")
+    for model in ACCESS_MODELS:
+        print("   %-5s %s" % (model, ACCESS_LABEL[model]))
+    cfg["access"] = ask(" model", cfg["access"], ACCESS_MODELS)
+
+    print()
+    print("--- key management (Lab 4) ---")
+    cfg["kms"] = ask_yes(" generate / distribute / revoke / renew / rotate,"
+                         " with sealed storage", cfg["kms"])
+
+    print()
+    print("--- extra hardening (not in the manual, but cheap marks) ---")
+    cfg["hmac"] = ask_yes(" an HMAC tag as well as the digest", cfg["hmac"])
+    cfg["log_chain"] = ask_yes(" hash-chain the audit log so edits show up",
+                               cfg["log_chain"])
+    cfg["replay"] = ask_yes(" reject replayed and stale submissions", cfg["replay"])
+
+    print()
     print("--- the rest ---")
     cfg["timestamps"] = ask_yes(" trusted timestamps and a deadline check", cfg["timestamps"])
     cfg["sockets"] = ask_yes(" real TCP client and server", cfg["sockets"])
+    if cfg["sockets"]:
+        cfg["split"] = ask_yes(" also write the client and server as separate files",
+                               cfg.get("split", True))
 
     print()
     print("--- roles ---")
@@ -1916,6 +3409,16 @@ def describe(cfg):
           if cfg["threshold"] and cfg["he"] != "NONE" else "not used")
     print("  timestamps  :", "yes" if cfg["timestamps"] else "no")
     print("  client-server:", "TCP sockets" if cfg["sockets"] else "in one process")
+    if cfg["sockets"]:
+        print("  extra files :", "answer_server.py + answer_client.py"
+              if cfg.get("split", True) else "none, one file only")
+    print("  access      :", ACCESS_LABEL[cfg["access"]])
+    print("  key mgmt    :", "generate/distribute/revoke/renew/rotate, sealed"
+          if cfg["kms"] else "not used")
+    extras = [name for name, on in (("HMAC tag", cfg["hmac"]),
+                                    ("hash-chained log", cfg["log_chain"]),
+                                    ("replay protection", cfg["replay"])) if on]
+    print("  hardening   :", ", ".join(extras) if extras else "none")
     print("  roles       :", ", ".join(cfg["roles"]))
 
 
@@ -1992,10 +3495,21 @@ def show_options():
     print("  signature  :", ", ".join(SIGNS))
     print("  homomorphic:", ", ".join(HES))
     print("  search     :", ", ".join(SEARCHES))
+    print("  access     :", ", ".join(ACCESS_MODELS))
+    for model in ACCESS_MODELS:
+        print("      %-5s %s" % (model, ACCESS_LABEL[model]))
     print("  threshold  : on / off      timestamps: on / off    sockets: on / off")
+    print("  key mgmt   : on / off      (generate, distribute, revoke, renew,")
+    print("                              rotate, expiry, PBKDF2-sealed storage)")
+    print("  hmac       : on / off      (a keyed tag beside the digest)")
+    print("  log chain  : on / off      (a tamper-evident audit log)")
+    print("  replay     : on / off      (nonce + timestamp window)")
+    print("  split      : on / off      (sockets on: also write the two halves")
+    print("                              as separate client and server files)")
     print()
     total = (len(CIPHER_INFO) * len(MODES) * len(WRAPS) * len(HASH_INFO)
-             * len(SIGNS) * len(HES) * len(SEARCHES) * 2 * 2 * 2)
+             * len(SIGNS) * len(HES) * len(SEARCHES) * len(ACCESS_MODELS)
+             * 2 * 2 * 2 * 2 * 2 * 2 * 2)
     print("  that is %d different answer files this one script can write" % total)
 
 
@@ -2042,6 +3556,13 @@ def selftest(limit=None):
         variant("search " + search, search=search)
     for wrap in WRAPS:
         variant("wrap " + wrap, wrap=wrap)
+    for model in ACCESS_MODELS:
+        variant("access " + model, access=model)
+    variant("key management", kms=True)
+    variant("hmac tag", hmac=True)
+    variant("hash-chained log", log_chain=True)
+    variant("replay protection", replay=True)
+    variant("every extra at once", kms=True, hmac=True, log_chain=True, replay=True)
     variant("no threshold", threshold=False)
     variant("no timestamps", timestamps=False)
     variant("no sockets", sockets=False)
@@ -2049,7 +3570,8 @@ def selftest(limit=None):
             threshold=False, timestamps=False, sockets=False)
     variant("everything on", he="PAILLIER", search="SSE", wrap="RSA",
             threshold=True, timestamps=True, sockets=True, sign="SCHNORR",
-            cipher="3DES", mode="CTR", hash="md5")
+            cipher="3DES", mode="CTR", hash="md5", access="BLP", kms=True,
+            hmac=True, log_chain=True, replay=True)
 
     if limit:
         cases = cases[:limit]
@@ -2075,6 +3597,21 @@ def selftest(limit=None):
                         path, output.strip().split("\n")[-1] if output.strip() else "no output"))
                 if "Traceback" in output:
                     raise AssertionError(path + ": traceback in output")
+            # every file must also answer "reset": the demo leaves records,
+            # keys and an index behind, and a stale set of those breaks the
+            # next build. Checked here because a missing reset() only shows
+            # up on the second run, never on the first.
+            for name in ("answer.py", "answer_clean.py",
+                         "answer_server.py", "answer_client.py"):
+                if not os.path.exists(name):
+                    continue
+                result = subprocess.run([sys.executable, name, "reset"],
+                                        capture_output=True, text=True,
+                                        timeout=120, env=child_env)
+                output = result.stdout + result.stderr
+                if result.returncode != 0 or "stored files removed" not in output:
+                    raise AssertionError("%s reset: %s" % (
+                        name, output.strip().split("\n")[-1] if output.strip() else "no output"))
             passed += 1
             print("  ok    %s" % label)
         except Exception as exc:

@@ -41,9 +41,9 @@ So the delete list is down to four things.
 when you have looked at it. `.idea` is left alone because it is your editor's
 own configuration - remove it by hand if you do not use PyCharm.
 
-`answer.py` and `answer_clean.py` at the top level are stale output from an
-old run, but they are harmless: the next `python wizard.py` overwrites both.
-No need to touch them.
+`answer.py`, `answer_clean.py`, `answer_server.py` and `answer_client.py` at
+the top level are output from the wizard. They are harmless: the next
+`python wizard.py` overwrites them. No need to touch them.
 
 ## Comes back whenever a program runs — clear any time
 

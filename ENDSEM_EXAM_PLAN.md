@@ -104,15 +104,19 @@ Every row maps to one wizard answer.
 
 ```
 cipher        AES-128 / AES-192 / AES-256 / DES / 3DES   ......
-mode          CBC / ECB / CFB / OFB / CTR                ......
-key wrap      RSA (what size?) / ECC / none              ......
-hash          SHA-512 / SHA-256 / SHA-1 / MD5            ......
+mode          CBC / ECB / CFB / OFB / CTR / GCM / EAX    ......
+key wrap      RSA / ECC / ElGamal / Rabin / DH / none    ......
+hash          SHA-512 / 384 / 256 / 224 / SHA-1 / SHA-3 / MD5 / custom
 signature     ElGamal / RSA / DSA / ECDSA / Schnorr      ......
 homomorphic   Paillier (total) / ElGamal or RSA (product) / none
 search        SSE / PKSE / none                          ......
+access        RBAC / DAC / MAC / BLP / ABAC / TIME / PROB ......
+key mgmt      generate, distribute, revoke, renew, rotate? yes / no
 threshold     yes (t of n?) / no                         ......
 timestamps    yes (deadline?) / no                       ......
 client-server sockets / one process                      ......
+HMAC tag      yes / no        hash-chained log  yes / no
+replay check  yes / no
 roles         ............ / ............ / ............
 record        what is one stored item called?            ......
 tag field     what is searched on?                       ......
@@ -130,7 +134,16 @@ Words to watch for:
 | "no single authority can decrypt" | threshold, Shamir t-of-n |
 | "trusted timestamp", "before the deadline" | timestamps |
 | "client side … server side" | sockets |
+| "Rabin cryptosystem" | key wrap = RABIN (Lab 4 Q2) |
+| "Diffie-Hellman shared secret" | key wrap = DH (Lab 3 Q5) |
+| "ElGamal with public key (p, g, h)" | key wrap = ELGAMAL (Lab 3 Q3) |
+| "your own hash function", "5381", "x33" | hash = custom (Lab 5 Q1) |
+| "clearance" / "no read up" / "attributes" / "limited-time" / "trust level" | the matching access model |
+| "generate, distribute, revoke, renew", "secure storage of private keys" | key management = yes (Lab 4 Q1/Q2) |
 | "menu driven" | it is not optional |
+
+All seven access-control models from Lab 4 and the full key-management
+catalogue are wizard options — `python wizard.py --options` lists every value.
 
 Also find the **marking table** at the bottom of the paper and write the
 component names down. In the sample paper they are Client-Server, ED, DSS,
@@ -231,7 +244,7 @@ and click through it. Point at these as you go:
 
 | component | what to show |
 | --- | --- |
-| Client-Server | submit on the client menu, verify on the server menu, then `netdemo` |
+| Client-Server | submit on the client menu, verify on the server menu, then `netdemo` — or `answer_server.py` and `answer_client.py` in two terminals |
 | ED | the IV line, the ciphertext line, the wrapped-session-key line |
 | DSS | `signature valid`, then `INVALID` after tampering |
 | Hash | the digest, then `DOES NOT MATCH` after tampering |
@@ -242,12 +255,21 @@ and click through it. Point at these as you go:
 | storage | open `records.json` and show it is all ciphertext |
 | audit | print the log |
 
-For a two-terminal client/server demonstration:
+For a two-terminal client/server demonstration, either shape works:
 
 ```
-terminal 1:  python answer.py server
+terminal 1:  python answer.py server          one file, two modes
 terminal 2:  python answer.py client
+
+terminal 1:  python answer_server.py          two separate programs
+terminal 2:  python answer_client.py alice B001 1 101
 ```
+
+The wizard writes `answer_server.py` and `answer_client.py` alongside the
+answer whenever the question has a client-server part. Each is the complete
+answer with a different entry point — nothing is imported between them — so
+you can show whichever the examiner expects. Full detail in
+`Wizards/Endsem_Wizard/INSTRUCTIONS.md`.
 
 ---
 
